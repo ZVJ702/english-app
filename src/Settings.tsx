@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import type { Level } from './data/vocab'
 import { exportData, importData, newSyncCode, setLevel, setSync, syncNow, syncReady, useStore } from './store'
 import { L, Page } from './ui'
-import { PHOTOS } from './data/pictures'
 
 export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: () => void }) {
   const s = useStore()
@@ -68,18 +67,6 @@ export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: (
         }} />
       </section>
 
-      <section className="card">
-        <h2><L vi="Nguồn ảnh" en="Photo credits" /></h2>
-        <p className="muted small">Ảnh minh họa lấy từ Wikimedia Commons, dùng theo giấy phép ghi bên cạnh từng ảnh.</p>
-        <details>
-          <summary>Xem danh sách {Object.keys(PHOTOS).length} ảnh · Show all</summary>
-          <ul className="credits">
-            {Object.entries(PHOTOS).map(([w, c]) => (
-              <li key={w}><a href={c.page} target="_blank" rel="noreferrer">{w}</a> — {c.artist || 'Không rõ tác giả'} · {c.license}</li>
-            ))}
-          </ul>
-        </details>
-      </section>
     </Page>
   )
 }

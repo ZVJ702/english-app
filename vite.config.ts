@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2,jpg,wasm}'], maximumFileSizeToCacheInBytes: 3_000_000},
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2,wasm}'], maximumFileSizeToCacheInBytes: 3_000_000},
       manifest: {
         name: 'English App', short_name: 'English', lang: 'vi', start_url: '.', display: 'standalone',
         description: 'Học từ vựng và luyện viết tiếng Anh với lặp lại ngắt quãng',

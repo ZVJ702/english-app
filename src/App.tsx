@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { WORDS } from './data/vocab'
 import { SENTENCES } from './data/writing'
 import { Essay } from './Essay'
 import { Placement } from './Placement'
@@ -57,12 +56,12 @@ export default function App() {
   })
   const max = Math.max(1, ...week.map((d) => d.n))
 
-  const total = WORDS.length + SENTENCES.length + notes.length
+  const total = SENTENCES.length + notes.length
   const activeDays = week.filter((d) => d.n > 0).length
   const hour = new Date().getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
   const cur = LADDER.findIndex((l) => l.id === s.level)
-  const lvItems = [...WORDS, ...SENTENCES].filter((x) => x.level === s.level)
+  const lvItems = SENTENCES.filter((x) => x.level === s.level)
   const lvLearned = lvItems.filter((x) => s.cards[x.id]).length
   const lvPct = Math.round((lvLearned / Math.max(1, lvItems.length)) * 100)
   const next = s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
@@ -82,8 +81,9 @@ export default function App() {
         </div>
         <Buddy mood={due > 0 || learned === 0 ? 'wave' : 'happy'} size={118} />
         <div className="bubble wide">
-          <b>{due > 0 ? "Let's review!" : learned > 0 ? 'Ready for new words?' : "Let's get started!"}</b>
-          <span>{due > 0 ? `${due} thẻ đang chờ bạn ôn.` : learned > 0 ? 'Không có thẻ đến hạn — học từ mới nhé.' : 'Bắt đầu phiên học đầu tiên nào!'}</span>
+          <b>{notes.length === 0 ? 'Add your words!' : due > 0 ? "Let's review!" : learned > 0 ? 'Ready for new words?' : "Let's get started!"}</b>
+          <span>{notes.length === 0 ? 'Chưa có từ vựng: vào "Bộ từ của tôi" để nhập bộ thẻ Anki.'
+            : due > 0 ? `${due} thẻ đang chờ bạn ôn.` : learned > 0 ? 'Không có thẻ đến hạn — học từ mới nhé.' : 'Bắt đầu phiên học đầu tiên nào!'}</span>
         </div>
         <div className="hero-progress">
           <div className="bar"><i style={{ width: `${(learned / total) * 100}%` }} /></div>
@@ -105,13 +105,13 @@ export default function App() {
         </div>
         <div className="lv-progress">
           <div className="bar"><i style={{ width: `${lvPct}%` }} /></div>
-          <span>{lvLearned}/{lvItems.length} mục cấp {s.level}</span>
+          <span>{lvLearned}/{lvItems.length} câu viết cấp {s.level}</span>
         </div>
         {next && lvPct >= 80 ? (
           <button className="primary" onClick={() => setLevel(next)}><L vi={`Lên cấp ${next}`} en={`Move up to ${next}`} /></button>
         ) : (
           <p className="muted small">
-            {next ? `Học được 80% nội dung cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
+            {next ? `Học được 80% câu viết cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
               : 'Đây là cấp cao nhất app đang có nội dung. C1 và C2 sẽ được thêm sau.'}
           </p>
         )}
@@ -165,7 +165,7 @@ export default function App() {
           ))}
         </div>
         <p className="muted small">
-          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {WORDS.length + notes.length} từ và {SENTENCES.length} câu viết.
+          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {notes.length} từ và {SENTENCES.length} câu viết.
         </p>
       </section>
 

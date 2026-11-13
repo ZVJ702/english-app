@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Rating, type Grade } from 'ts-fsrs'
-import { WORDS, type Level } from './data/vocab'
+import type { Level } from './data/vocab'
 import { SENTENCES } from './data/writing'
 import { dueTime, getState, grade } from './store'
 import { copy, missingWords, sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
-import { photoUrl, pictureFor } from './data/pictures'
 import { allNotes, mediaUrl, NOTE } from './decks'
 
-const WORD = new Map(WORDS.map((w) => [w.id, w]))
 const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
 const ORDER: Record<Level, Level[]> = { A2: ['A2', 'B1', 'B2'], B1: ['B1', 'B2', 'A2'], B2: ['B2', 'B1', 'A2'] }
 const NEW_COUNT: Record<number, [number, number]> = { 5: [3, 2], 15: [8, 4], 30: [15, 8] }
@@ -17,17 +15,15 @@ const NEW_COUNT: Record<number, [number, number]> = { 5: [3, 2], 15: [8, 4], 30:
 interface Item { id: string; phase: 'intro' | 'test' }
 interface Vocab { id: string; word: string; pos: string; vi: string; ex: string; tag: string; media?: { deck: string; img?: string; audio?: string } }
 
-/** Một mục từ vựng: từ có sẵn của app hoặc thẻ người dùng nhập từ Anki. */
+/** Một mục từ vựng: thẻ người dùng nhập từ Anki. */
 function vocab(id: string): Vocab | undefined {
-  const w = WORD.get(id)
-  if (w) return { ...w, tag: w.level }
   const n = NOTE.get(id)
   if (!n) return undefined
   const i = n.example.toLowerCase().indexOf(n.word.toLowerCase())
   const ex = i >= 0 ? `${n.example.slice(0, i)}{${n.example.slice(i, i + n.word.length)}}${n.example.slice(i + n.word.length)}` : n.example
   return { id, word: n.word, pos: '', vi: n.meaning, ex, tag: 'Anki', media: { deck: n.deck, img: n.img, audio: n.audio } }
 }
-export const known = (id: string) => WORD.has(id) || SENT.has(id) || NOTE.has(id)
+export const known = (id: string) => SENT.has(id) || NOTE.has(id)
 
 function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
   const [url, setUrl] = useState<string | null>(null)
@@ -38,12 +34,8 @@ function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
     if (img && deck) mediaUrl(deck, img).then((u) => { if (live) setUrl(u) })
     return () => { live = false }
   }, [img, deck])
-  const src = img ? url : photoUrl(v.word)
-  if (src) return <img className={`photo${sm ? ' sm' : ''}`} src={src} alt="" />
-  if (v.media) return sm || img ? null : <div className="picture" aria-hidden="true">📖</div>
-  return sm
-    ? <span className="picture sm" aria-hidden="true">{pictureFor(v.word, v.pos)}</span>
-    : <div className="picture" aria-hidden="true">{pictureFor(v.word, v.pos)}</div>
+  if (img && url) return <img className={`photo${sm ? ' sm' : ''}`} src={url} alt="" />
+  return sm || img ? null : <div className="picture" aria-hidden="true">📖</div>
 }
 async function say(v: Vocab) {
   const url = v.media?.audio ? await mediaUrl(v.media.deck, v.media.audio) : null
@@ -57,7 +49,7 @@ export function countDue(): number {
 }
 export function countNew(): number {
   const c = getState().cards
-  return WORDS.filter((w) => !c[w.id]).length + SENTENCES.filter((s) => !c[s.id]).length + allNotes().filter((n) => !c[n.id]).length
+  return SENTENCES.filter((s) => !c[s.id]).length + allNotes().filter((n) => !c[n.id]).length
 }
 
 function buildQueue(minutes: number): Item[] {
@@ -71,14 +63,8 @@ function buildQueue(minutes: number): Item[] {
   const byLevel = <T extends { id: string; level: Level }>(list: T[]) =>
     order.flatMap((lv) => list.filter((x) => x.level === lv && !s.cards[x.id]))
   const [nw, ns] = NEW_COUNT[minutes] ?? [8, 4]
-  // Từ mới: xen kẽ từ có sẵn của app và thẻ người dùng tự nhập.
-  const own = byLevel(WORDS), imported = allNotes().filter((n) => !s.cards[n.id])
-  const pool: { id: string }[] = []
-  for (let i = 0; pool.length < nw && (i < own.length || i < imported.length); i++) {
-    if (imported[i]) pool.push(imported[i])
-    if (own[i]) pool.push(own[i])
-  }
-  const words = pool.slice(0, nw).map((w): Item => ({ id: w.id, phase: 'intro' }))
+  // Từ mới lấy từ các bộ thẻ người dùng đã nhập, theo đúng thứ tự trong bộ thẻ.
+  const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, nw).map((n): Item => ({ id: n.id, phase: 'intro' }))
   const sents = byLevel(SENTENCES).slice(0, ns).map((x): Item => ({ id: x.id, phase: 'test' }))
   // Học xen kẽ: cứ hai từ mới thì chen một câu viết.
   const fresh: Item[] = []
