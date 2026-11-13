@@ -1,75 +1,100 @@
-// Infi — nhân vật đồng hành hình ký hiệu vô cực (∞), có tay, chân và hai mắt nằm trong hai vòng.
+// Infi — nhân vật đồng hành: một hành tinh nhỏ lơ lửng giữa quỹ đạo hình vô cực (∞).
+// Vòng trái là bầu trời sao (không gian), vòng phải là mặt đồng hồ (thời gian).
 export type Mood = 'happy' | 'wave' | 'cheer' | 'sad' | 'sleep' | 'think'
 
-const INK = '#2c4438'
-const LIMB = '#63c08c'
-const LOOP = 'M70,48 C60,33 52,27 42,27 C28,27 14,36 14,48 C14,60 28,69 42,69 C52,69 60,63 70,48 C80,33 88,27 98,27 C112,27 126,36 126,48 C126,60 112,69 98,69 C88,69 80,63 70,48 Z'
+const INK = '#2e2a55'
+const LIMB = '#8176e6'
+const ORBIT = 'M80,54 C68,34 56,26 42,26 C24,26 12,39 12,54 C12,69 24,82 42,82 C56,82 68,74 80,54 C92,34 104,26 118,26 C136,26 148,39 148,54 C148,69 136,82 118,82 C104,82 92,74 80,54 Z'
+const spark = (x: number, y: number, r: number) => {
+  const k = r * 0.3
+  return `M${x} ${y - r} L${x + k} ${y - k} L${x + r} ${y} L${x + k} ${y + k} L${x} ${y + r} L${x - k} ${y + k} L${x - r} ${y} L${x - k} ${y - k}Z`
+}
 
 export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: number }) {
   const up = mood === 'cheer'
   const closed = mood === 'cheer' || mood === 'sleep'
-  const py = mood === 'think' ? 44 : mood === 'sad' ? 51 : 48
+  const ey = mood === 'think' ? 48 : mood === 'sad' ? 53 : 51
   const eye = (cx: number) =>
     closed ? (
-      <path key={cx} d={mood === 'sleep' ? `M${cx - 6} 47 Q${cx} 53 ${cx + 6} 47` : `M${cx - 6} 50 Q${cx} 42 ${cx + 6} 50`}
-        stroke={INK} strokeWidth="2.8" strokeLinecap="round" fill="none" />
+      <path key={cx} d={mood === 'sleep' ? `M${cx - 4} 50 Q${cx} 54 ${cx + 4} 50` : `M${cx - 4} 53 Q${cx} 47 ${cx + 4} 53`}
+        stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />
     ) : (
       <g key={cx}>
-        <circle cx={cx + (mood === 'think' ? 2 : 0)} cy={py} r="5.2" fill={INK} />
-        <circle cx={cx + (mood === 'think' ? 3.8 : 1.8)} cy={py - 1.8} r="1.7" fill="#fff" />
+        <circle cx={cx + (mood === 'think' ? 1.5 : 0)} cy={ey} r="3.5" fill={INK} />
+        <circle cx={cx + (mood === 'think' ? 2.7 : 1.2)} cy={ey - 1.3} r="1.2" fill="#fff" />
       </g>
     )
   return (
-    <svg className={`buddy ${mood}`} width={size * 1.22} height={size} viewBox="0 0 140 115" role="img" aria-label="Infi, bạn đồng hành hình vô cực">
+    <svg className={`buddy ${mood}`} width={size * 1.45} height={size} viewBox="0 0 160 110" role="img" aria-label="Infi, bạn đồng hành">
       <defs>
-        <linearGradient id="infi-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#b5ecb0" /><stop offset="1" stopColor="#7fd6a4" />
+        <linearGradient id="infi-orbit" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#7fe0b8" /><stop offset=".5" stopColor="#b3a8f7" /><stop offset="1" stopColor="#f7a3c8" />
+        </linearGradient>
+        <radialGradient id="infi-planet" cx=".34" cy=".28" r=".95">
+          <stop offset="0" stopColor="#ddd6ff" /><stop offset=".55" stopColor="#a497f3" /><stop offset="1" stopColor="#7468d8" />
+        </radialGradient>
+        <radialGradient id="infi-sky" cx=".4" cy=".35" r=".9">
+          <stop offset="0" stopColor="#4b41ad" /><stop offset="1" stopColor="#221e4d" />
+        </radialGradient>
+        <linearGradient id="infi-clock" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#e9e2ff" />
         </linearGradient>
       </defs>
-      <ellipse cx="70" cy="108" rx="40" ry="4" fill="#000" opacity=".08" />
-      {/* chân */}
-      <g stroke={LIMB} strokeWidth="7" strokeLinecap="round" fill="none">
-        <path d="M42 70 L40 96" /><path d="M98 70 L100 96" />
+      <ellipse className="shade" cx="80" cy="104" rx="20" ry="2.6" fill="#000" opacity=".12" />
+      <g className="float">
+        {/* quỹ đạo vô cực: một lớp sáng mờ và một nét mảnh */}
+        <path d={ORBIT} fill="none" stroke="url(#infi-orbit)" strokeWidth="9" opacity=".18" />
+        {/* không gian (trái) và thời gian (phải) */}
+        <circle cx="42" cy="54" r="19" fill="url(#infi-sky)" opacity=".94" />
+        <path d="M37 49 a7 7 0 1 0 8 9 a5.6 5.6 0 1 1 -8 -9z" fill="#ffe08a" />
+        <g className="twinkle" fill="#fff"><circle cx="33" cy="45" r="1" /><circle cx="51" cy="44" r=".8" /><circle cx="34" cy="64" r=".8" /><circle cx="52" cy="62" r="1" /></g>
+        <path d={spark(49, 51, 2.4)} fill="#ffcf5c" />
+        <circle cx="118" cy="54" r="19" fill="url(#infi-clock)" stroke="#d3c9fb" strokeWidth="1.6" />
+        <g stroke="#a497f3" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M118 38.5 V41.5" /><path d="M118 66.5 V69.5" /><path d="M102.5 54 H105.5" /><path d="M130.5 54 H133.5" />
+        </g>
+        <g stroke={INK} strokeWidth="2.2" strokeLinecap="round"><path d="M118 54 V45" /><path d="M118 54 L125 58" /></g>
+        <circle cx="118" cy="54" r="1.8" fill="#f7a3c8" />
+        <path d={ORBIT} fill="none" stroke="url(#infi-orbit)" strokeWidth="2.6" />
+        {/* hai vệ tinh trôi theo quỹ đạo */}
+        <circle r="4" fill="#7fe0b8"><animateMotion dur="11s" repeatCount="indefinite" path={ORBIT} /></circle>
+        <circle r="3.2" fill="#f7a3c8"><animateMotion dur="11s" begin="-5.5s" repeatCount="indefinite" path={ORBIT} /></circle>
+        {/* chân lơ lửng và tay */}
+        <g stroke={LIMB} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M73 72 L70 88" /><path d="M87 72 L90 88" />
+          {up ? <path d="M63 46 L51 31" /> : mood === 'sad' ? <path d="M61 60 L55 74" /> : <path d="M61 58 L51 67" />}
+          {up ? <path d="M97 46 L109 31" />
+            : mood === 'wave' ? <path className="arm-wave" d="M98 48 L110 33" />
+            : mood === 'think' ? <path d="M98 60 L100 68 L90 66" />
+            : mood === 'sad' ? <path d="M99 60 L105 74" /> : <path d="M99 58 L109 67" />}
+        </g>
+        <ellipse cx="68.5" cy="90" rx="6" ry="3.8" fill={LIMB} /><ellipse cx="91.5" cy="90" rx="6" ry="3.8" fill={LIMB} />
+        {/* hành tinh */}
+        <circle cx="80" cy="54" r="21" fill="url(#infi-planet)" />
+        <path d="M64 46 Q70 38 80 37" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" fill="none" opacity=".55" />
+        <ellipse cx="91" cy="68" rx="5" ry="2.2" fill="#5b4fcf" opacity=".22" />
+        {eye(73)}{eye(87)}
+        {mood === 'sad' && (
+          <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M68 47 L76 45.5" /><path d="M92 47 L84 45.5" /></g>
+        )}
+        <circle cx="66.5" cy="58.5" r="3.2" fill="#ff9db5" opacity=".8" /><circle cx="93.5" cy="58.5" r="3.2" fill="#ff9db5" opacity=".8" />
+        {mood === 'cheer' ? <path d="M75 57 Q80 66 85 57 Z" fill="#e2726e" stroke={INK} strokeWidth="1.8" strokeLinejoin="round" />
+          : mood === 'sad' ? <path d="M76 61 Q80 57 84 61" stroke={INK} strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          : mood === 'sleep' ? <circle cx="80" cy="60" r="2.4" fill={INK} opacity=".75" />
+          : mood === 'think' ? <path d="M77 60 L84 59" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+          : <path d="M75 57 Q80 63 85 57" stroke={INK} strokeWidth="2.2" strokeLinecap="round" fill="none" />}
       </g>
-      <ellipse cx="37" cy="99" rx="10" ry="6" fill={LIMB} />
-      <ellipse cx="103" cy="99" rx="10" ry="6" fill={LIMB} />
-      {/* tay */}
-      <g stroke={LIMB} strokeWidth="7" strokeLinecap="round" fill="none">
-        {up ? <path d="M16 42 L3 20" /> : mood === 'sad' ? <path d="M15 52 L5 72" /> : <path d="M15 50 L2 62" />}
-        {up ? <path d="M124 42 L137 20" />
-          : mood === 'wave' ? <path className="arm-wave" d="M124 42 L138 20" />
-          : mood === 'think' ? <path d="M125 52 L132 66" />
-          : mood === 'sad' ? <path d="M125 52 L135 72" /> : <path d="M125 50 L138 62" />}
-      </g>
-      {/* thân hình vô cực */}
-      <path d={LOOP} fill="none" stroke="#4fae7a" strokeWidth="20" strokeLinejoin="round" />
-      <path d={LOOP} fill="none" stroke="url(#infi-body)" strokeWidth="15" strokeLinejoin="round" />
-      <path d="M26 32 Q40 24 54 30" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".6" />
-      <path d="M86 30 Q98 24 114 32" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".6" />
-      {/* hai mắt nằm trong hai vòng */}
-      <ellipse cx="42" cy="48" rx="17" ry="12" fill="#fff" /><ellipse cx="98" cy="48" rx="17" ry="12" fill="#fff" />
-      {eye(42)}{eye(98)}
-      {mood === 'sad' && (
-        <g stroke={INK} strokeWidth="2.4" strokeLinecap="round"><path d="M33 41 L46 38" /><path d="M107 41 L94 38" /></g>
-      )}
-      {/* má và miệng */}
-      <circle cx="56" cy="62" r="4" fill="#ff9db5" opacity=".8" /><circle cx="84" cy="62" r="4" fill="#ff9db5" opacity=".8" />
-      {mood === 'cheer' ? <path d="M64 47 Q70 58 76 47 Z" fill="#e2726e" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
-        : mood === 'sad' ? <path d="M65 52 Q70 47 75 52" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />
-        : mood === 'sleep' ? <circle cx="70" cy="50" r="2.8" fill={INK} opacity=".75" />
-        : mood === 'think' ? <path d="M66 50 L74 49" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
-        : <path d="M64 47 Q70 55 76 47" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />}
+      {/* sao lấp lánh xung quanh */}
+      <g className="twinkle"><path d={spark(80, 12, 4)} fill="#ffcf5c" /><path d={spark(14, 20, 2.6)} fill="#c3baf8" /><path d={spark(146, 22, 2.4)} fill="#c3baf8" /></g>
       {mood === 'sleep' && (
-        <g className="zzz" fill="#4fae7a" fontWeight="900" fontFamily="inherit">
-          <text x="116" y="22" fontSize="16">z</text><text x="128" y="11" fontSize="12">z</text>
+        <g className="zzz" fill="#b3a8f7" fontWeight="900" fontFamily="inherit">
+          <text x="100" y="30" fontSize="15">z</text><text x="112" y="19" fontSize="11">z</text>
         </g>
       )}
       {mood === 'cheer' && (
-        <g className="sparkle" fill="#ffcf5c">
-          <path d="M66 6 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" /><path d="M22 4 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" />
-        </g>
+        <g className="sparkle" fill="#ffcf5c"><path d={spark(40, 14, 4.5)} /><path d={spark(122, 12, 3.5)} /><path d={spark(60, 6, 2.4)} /></g>
       )}
-      {mood === 'think' && <g fill="#4fae7a" opacity=".8"><circle cx="124" cy="22" r="3" /><circle cx="132" cy="11" r="5" /></g>}
+      {mood === 'think' && <g fill="#b3a8f7" opacity=".85"><circle cx="104" cy="30" r="2.6" /><circle cx="111" cy="20" r="4.2" /></g>}
     </svg>
   )
 }
