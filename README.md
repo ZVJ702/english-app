@@ -6,8 +6,8 @@ Web app cài được (PWA) để học từ vựng và ngữ pháp tiếng Anh 
 
 - **Bài xếp lớp** 20 câu, cho ra A2 / B1 / B2, và **lộ trình cấp độ** A1 → C2.
 - **Từ vựng từ bộ thẻ Anki (.apkg)**: nhập trong mục **Bộ từ của tôi**; từ, nghĩa, hình và âm thanh lưu trên thiết bị.
-- **Ngữ pháp**: 23 chủ đề (A1–B2) có bài đọc chi tiết (so sánh với tiếng Việt, lỗi hay gặp) và 5 dạng bài: trắc nghiệm, điền từ, sắp xếp câu, nghe chép, nói. Sửa hoặc thêm trong `src/data/grammar.ts`; danh sách chủ đề chưa viết nằm trong `PLANNED`.
-- **Giao tiếp**: mẫu câu theo tình huống (đời sống, công việc, du lịch, IELTS Speaking) trong `src/data/phrases.ts`.
+- **Ngữ pháp**: 32 chủ đề (A1–B2) có bài đọc chi tiết (so sánh với tiếng Việt, lỗi hay gặp, ghi chú phát âm) và 5 dạng bài: trắc nghiệm, điền từ, sắp xếp câu, nghe chép, nói. Sửa hoặc thêm trong `src/data/grammar.ts`; danh sách chủ đề chưa viết nằm trong `PLANNED`.
+- **Giao tiếp**: mẫu câu theo tình huống (đời sống, công việc, kinh tế – tài chính, kỹ thuật, du lịch, IELTS Speaking) trong `src/data/phrases.ts`.
 - **Phiên học 5, 15 hoặc 30 phút**: xen kẽ từ vựng và ngữ pháp. Lịch ôn do thuật toán FSRS tính; nghỉ không bị phạt.
 - **Đồng bộ bằng mã** và **sao lưu ra tệp**.
 - Chạy offline sau lần mở đầu tiên; giao diện song ngữ Việt – Anh.

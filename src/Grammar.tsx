@@ -23,6 +23,13 @@ export function Lesson({ t }: { t: Topic }) {
           ))}
         </div>
       )}
+      {t.sounds.map(([note, samples], i) => (
+        <div key={i} className="sounds">
+          <b>🗣️ Phát âm · Pronunciation</b>
+          <p>{note}</p>
+          <div className="bank">{samples.map((w) => <button key={w} className="chip-w" onClick={() => speak(w)}>🔊 {w}</button>)}</div>
+        </div>
+      ))}
       {t.examples.map(([en, vi], i) => (
         <p key={i} className="ex">
           <b>{en}</b> <button className="ghost" onClick={() => speak(en.split('→').pop()!)} aria-label="Nghe · Listen">🔊</button>
@@ -73,7 +80,7 @@ export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack:
             {PHRASES.filter((t) => t.domain === id).map((t) => <Row key={t.id} t={t} onOpen={() => setOpen(t)} />)}
           </div>
         ))}
-        <p className="muted small center">Mỗi nhóm hiện có 2 tình huống; các tình huống khác sẽ được thêm dần.</p>
+        <p className="muted small center">Các tình huống khác sẽ được thêm dần.</p>
       </Page>
     )
   }
@@ -84,10 +91,12 @@ export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack:
         <div key={lv} className="group">
           <h2 className="sec">Cấp {lv}{lv === s.level && <span className="badge">Hiện tại</span>}</h2>
           {GRAMMAR.filter((t) => t.level === lv).map((t) => <Row key={t.id} t={t} onOpen={() => setOpen(t)} />)}
-          <details className="planned">
-            <summary>Sắp có: {PLANNED[lv].length} chủ đề nữa</summary>
-            <ul>{PLANNED[lv].map((p) => <li key={p}>{p}</li>)}</ul>
-          </details>
+          {PLANNED[lv].length > 0 && (
+            <details className="planned">
+              <summary>Sắp có: {PLANNED[lv].length} chủ đề nữa</summary>
+              <ul>{PLANNED[lv].map((p) => <li key={p}>{p}</li>)}</ul>
+            </details>
+          )}
         </div>
       ))}
     </Page>

@@ -1,6 +1,8 @@
 import { parseUnits } from './grammar'
 // Mẫu câu giao tiếp theo tình huống. Định dạng: # mã|cấp|tên tiếng Việt|tên tiếng Anh||nhóm, rồi các dòng s: câu|nghĩa
-export const DOMAINS: Record<string, string> = { daily: 'Đời sống hằng ngày', work: 'Công việc', travel: 'Du lịch', ielts: 'IELTS Speaking' }
+export const DOMAINS: Record<string, string> = {
+  daily: 'Đời sống hằng ngày', work: 'Công việc', finance: 'Kinh tế – Tài chính', engineering: 'Kỹ thuật', travel: 'Du lịch', ielts: 'IELTS Speaking',
+}
 const RAW = `
 # greet|A1|Chào hỏi và làm quen|Greetings and introductions||daily
 s: Nice to meet you.|Rất vui được gặp bạn.
@@ -30,6 +32,41 @@ s: I'm looking for a new challenge.|Tôi đang tìm một thử thách mới.
 s: My biggest strength is that I learn quickly.|Điểm mạnh nhất của tôi là học nhanh.
 s: Could you tell me more about the role?|Bạn cho tôi biết thêm về vị trí này được không?
 s: When can I expect to hear from you?|Khi nào tôi có thể nhận được phản hồi?
+# figures|B1|Trình bày số liệu|Presenting figures||finance
+s: Revenue increased by ten percent last quarter.|Doanh thu tăng mười phần trăm trong quý trước.
+s: Our costs have gone down since January.|Chi phí của chúng ta đã giảm từ tháng Một.
+s: Sales reached two million dollars this year.|Doanh số đạt hai triệu đô la trong năm nay.
+s: The profit margin is around fifteen percent.|Biên lợi nhuận vào khoảng mười lăm phần trăm.
+s: As you can see from the chart, demand is growing.|Như bạn thấy trên biểu đồ, nhu cầu đang tăng.
+s: These figures are higher than we expected.|Các con số này cao hơn chúng tôi dự kiến.
+# budget|B1|Ngân sách và chi phí|Budget and costs||finance
+s: What is the budget for this project?|Ngân sách cho dự án này là bao nhiêu?
+s: We need to cut costs by five percent.|Chúng ta cần cắt giảm chi phí năm phần trăm.
+s: That is over our budget.|Mức đó vượt ngân sách của chúng tôi.
+s: Can we get a discount for a large order?|Chúng tôi có được giảm giá cho đơn hàng lớn không?
+s: The payment is due at the end of the month.|Khoản thanh toán đến hạn vào cuối tháng.
+s: Could you send me the invoice?|Bạn gửi cho tôi hóa đơn được không?
+# market|B2|Thị trường và đầu tư|Markets and investment||finance
+s: The market has been very volatile this week.|Thị trường tuần này biến động rất mạnh.
+s: Interest rates are expected to rise next year.|Lãi suất được dự báo sẽ tăng trong năm tới.
+s: Inflation has a direct impact on consumer spending.|Lạm phát tác động trực tiếp đến chi tiêu của người tiêu dùng.
+s: We should diversify our portfolio to reduce risk.|Chúng ta nên đa dạng hóa danh mục để giảm rủi ro.
+s: The return on investment was better than forecast.|Tỷ suất hoàn vốn tốt hơn dự báo.
+s: In the long term, the outlook remains positive.|Về dài hạn, triển vọng vẫn tích cực.
+# fault|B1|Giải thích sự cố kỹ thuật|Explaining a technical problem||engineering
+s: The machine stopped working this morning.|Sáng nay máy đã ngừng hoạt động.
+s: There seems to be a problem with the power supply.|Có vẻ có vấn đề với nguồn điện.
+s: Have you tried restarting the system?|Bạn đã thử khởi động lại hệ thống chưa?
+s: We need to replace this part.|Chúng ta cần thay bộ phận này.
+s: It should be fixed by tomorrow.|Việc này sẽ được sửa xong trước ngày mai.
+s: Could you show me where the fault is?|Bạn chỉ cho tôi lỗi nằm ở đâu được không?
+# specs|B1|Thông số và yêu cầu kỹ thuật|Specifications and requirements||engineering
+s: What are the technical requirements?|Các yêu cầu kỹ thuật là gì?
+s: It is two meters long and one meter wide.|Nó dài hai mét và rộng một mét.
+s: The maximum load is five hundred kilograms.|Tải trọng tối đa là năm trăm ki-lô-gam.
+s: This design meets the safety standards.|Thiết kế này đáp ứng các tiêu chuẩn an toàn.
+s: We need to test it before production.|Chúng ta cần thử nghiệm trước khi sản xuất.
+s: How long will the installation take?|Việc lắp đặt sẽ mất bao lâu?
 # airport|A2|Ở sân bay|At the airport||travel
 s: Where is the check-in counter?|Quầy làm thủ tục ở đâu?
 s: I'd like a window seat, please.|Tôi muốn ghế cạnh cửa sổ.

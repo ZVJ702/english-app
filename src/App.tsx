@@ -153,7 +153,7 @@ export default function App() {
         <span className="icon">💬</span>
         <span>
           <b><L vi="Giao tiếp" en="Conversation" /></b>
-          <span className="muted small">{PHRASES.length} tình huống: đời sống, công việc, du lịch, IELTS Speaking.</span>
+          <span className="muted small">{PHRASES.length} tình huống: đời sống, công việc, tài chính, kỹ thuật, du lịch, IELTS Speaking.</span>
         </span>
         <span className="chev">›</span>
       </button>

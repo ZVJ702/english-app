@@ -5,7 +5,7 @@ import { normalize, sameText, speak } from './util'
 import { L } from './ui'
 
 export interface Answer { ok: boolean; given: string }
-type Props = { ex: Exercise; done: boolean; onAnswer: (a: Answer) => void }
+type Props = { ex: Exercise; done: boolean; onAnswer: (a: Answer) => void; level?: string }
 
 export function Mcq({ ex, done, onAnswer }: Props) {
   const [pick, setPick] = useState(-1)
@@ -45,8 +45,19 @@ export function Gap({ ex, done, onAnswer }: Props) {
   )
 }
 
-export function Listen({ ex, done, onAnswer }: Props) {
+/** Số từ tối đa của một câu nghe chép tự gõ ở mỗi cấp; câu dài hơn thì nghe rồi ghép từ có sẵn. */
+const DICTATION_WORDS: Record<string, number> = { A1: 4, A2: 6, B1: 9, B2: 13 }
+
+export function Listen({ ex, done, onAnswer, level = 'A2' }: Props) {
   useEffect(() => { speak(ex.q) }, [ex.q])
+  if (ex.q.split(' ').length > (DICTATION_WORDS[level] ?? 6)) {
+    return (
+      <>
+        <button className="play" onClick={() => speak(ex.q)} aria-label="Nghe lại · Play again">🔊 <L vi="Nghe lại" en="Play again" /></button>
+        <Order ex={{ ...ex, vi: '' }} done={done} onAnswer={onAnswer} hint="Nghe rồi ghép lại câu bạn nghe được · Listen and rebuild the sentence" />
+      </>
+    )
+  }
   return (
     <>
       <p className="muted small">Nghe và gõ lại câu bạn nghe được · Listen and type what you hear</p>
@@ -56,7 +67,7 @@ export function Listen({ ex, done, onAnswer }: Props) {
   )
 }
 
-export function Order({ ex, done, onAnswer }: Props) {
+export function Order({ ex, done, onAnswer, hint }: Props & { hint?: string }) {
   const words = useMemo(() => {
     const list = ex.q.split(' ').map((w, i) => ({ w, i }))
     for (let k = list.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [list[k], list[j]] = [list[j], list[k]] }
@@ -66,8 +77,8 @@ export function Order({ ex, done, onAnswer }: Props) {
   const text = picked.map((i) => ex.q.split(' ')[i]).join(' ')
   return (
     <>
-      <p className="muted small">Sắp xếp các từ thành câu đúng · Put the words in order</p>
-      <p className="prompt wide">{ex.vi}</p>
+      <p className="muted small">{hint ?? 'Sắp xếp các từ thành câu đúng · Put the words in order'}</p>
+      {ex.vi && <p className="prompt wide">{ex.vi}</p>}
       <div className="line">
         {picked.map((i) => <button key={i} className="chip-w" disabled={done} onClick={() => setPicked(picked.filter((x) => x !== i))}>{ex.q.split(' ')[i]}</button>)}
       </div>

@@ -232,7 +232,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {ex && unit && View && (
         <section className="card slide exercise" key={key} data-ex={ex.id} data-kind={ex.kind}>
           <span className="tag write">{unit.domain ? '💬' : '📘'} {unit.vi} · {KIND[ex.kind]}</span>
-          <View ex={ex} done={checked} onAnswer={setAnswer} />
+          <View ex={ex} done={checked} onAnswer={setAnswer} level={unit.level} />
         </section>
       )}
 
