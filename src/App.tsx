@@ -6,7 +6,8 @@ import { Placement } from './Placement'
 import { countDue, countNew, Session } from './Session'
 import { Settings } from './Settings'
 import { syncNow, syncReady, today, useStore } from './store'
-import { L, Page, Ring } from './ui'
+import { L, Page } from './ui'
+import { Buddy, BuddySays } from './Buddy'
 
 type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'settings' } | { name: 'placement' }
 
@@ -20,6 +21,7 @@ export default function App() {
     return (
       <Page title="English App">
         <section className="card">
+          <BuddySays mood="wave" size={110} en="Hi, I'm Bơ!" vi="Mình là Bơ, bạn học cùng bạn." />
           <h2><L vi="Chào bạn!" en="Welcome!" /></h2>
           <p>Trước tiên, làm một bài kiểm tra ngắn 20 câu (khoảng 5 phút) để app chọn nội dung vừa sức.</p>
           <p className="muted small">A short 20-question test picks the right starting level.</p>
@@ -55,18 +57,20 @@ export default function App() {
   return (
     <main className="page">
       <section className="hero">
-        <div>
-          <p className="hello">{hello[0]} 👋</p>
+        <div className="hero-text">
+          <p className="hello">{hello[0]}!</p>
           <p className="hello-en">{hello[1]}</p>
           <span className="badge">Trình độ {s.level}</span>
-          <p className="hero-note">
-            {due > 0 ? `${due} thẻ đang chờ bạn ôn` : learned > 0 ? 'Không có thẻ đến hạn — học từ mới nhé' : 'Bắt đầu phiên học đầu tiên nào!'}
-          </p>
         </div>
-        <Ring value={learned / total}>
-          <b>{Math.round((learned / total) * 100)}%</b>
-          <small>đã học</small>
-        </Ring>
+        <Buddy mood={due > 0 || learned === 0 ? 'wave' : 'happy'} size={118} />
+        <div className="bubble wide">
+          <b>{due > 0 ? "Let's review!" : learned > 0 ? 'Ready for new words?' : "Let's get started!"}</b>
+          <span>{due > 0 ? `${due} thẻ đang chờ bạn ôn.` : learned > 0 ? 'Không có thẻ đến hạn — học từ mới nhé.' : 'Bắt đầu phiên học đầu tiên nào!'}</span>
+        </div>
+        <div className="hero-progress">
+          <div className="bar"><i style={{ width: `${(learned / total) * 100}%` }} /></div>
+          <span>Đã học {learned}/{total} · {Math.round((learned / total) * 100)}%</span>
+        </div>
       </section>
 
       <div className="stats">

@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'English App', short_name: 'English', lang: 'vi', start_url: '.', display: 'standalone',
         description: 'Học từ vựng và luyện viết tiếng Anh với lặp lại ngắt quãng',
-        theme_color: '#2456d6', background_color: '#f6f5f1',
+        theme_color: '#e6e0fb', background_color: '#fdf8f3',
         icons: [{ src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
       },
     }),

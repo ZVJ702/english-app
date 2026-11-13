@@ -5,6 +5,8 @@ import { SENTENCES } from './data/writing'
 import { dueTime, getState, grade } from './store'
 import { copy, missingWords, sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
+import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
+import { pictureFor } from './data/pictures'
 
 const WORD = new Map(WORDS.map((w) => [w.id, w]))
 const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
@@ -93,7 +95,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       <Page title={<L vi="Xong phiên học" en="Session complete" />}>
         {done > 0 && <Confetti />}
         <section className="card center finish">
-          <div className="trophy">{done > 0 ? '🎉' : '🌙'}</div>
+          <div className="trophy"><Buddy mood={done > 0 ? 'cheer' : 'sleep'} size={132} /></div>
           <h2>{done > 0 ? <L vi="Làm tốt lắm!" en="Well done!" /> : <L vi="Hôm nay nhẹ nhàng" en="All caught up" />}</h2>
           <div className="stats">
             <div className="chip c1"><b>{done}</b><L vi="lượt ôn" en="reviews" /></div>
@@ -131,6 +133,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {word && item.phase === 'intro' && (
         <section className="card slide intro" key={`${item.id}-${item.phase}-${done}`}>
           <span className="tag new">✨ Từ mới · New word · {word.level}</span>
+          <div className="picture" aria-hidden="true">{pictureFor(word.word, word.pos)}</div>
           <h2 className="word">{word.word} <button className="ghost" onClick={() => speak(word.word)} aria-label="Nghe · Listen">🔊</button></h2>
           <p><em>{word.pos}</em> — {word.vi}</p>
           <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>
@@ -143,6 +146,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {word && item.phase === 'test' && (
         <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
           <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.level}</span>
+          <span className="picture sm" aria-hidden="true">{pictureFor(word.word, word.pos)}</span>
           <p className="prompt">{word.vi} <em>({word.pos})</em></p>
           <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
@@ -169,7 +173,12 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
 
       {checked && (
         <section className={`card result ${correct ? 'ok bounce' : word ? 'bad shake' : 'neutral slide'}`}>
-          <p className="verdict">{correct ? '✓ Chính xác · Correct' : word ? '✗ Chưa đúng · Not quite' : 'So với đáp án mẫu · Compare with the model answer'}</p>
+          {correct
+            ? <BuddySays mood="cheer" en={CHEERS[done % CHEERS.length][0]} vi={CHEERS[done % CHEERS.length][1]} />
+            : word
+              ? <BuddySays mood="sad" en={COMFORTS[done % COMFORTS.length][0]} vi={COMFORTS[done % COMFORTS.length][1]} />
+              : <BuddySays mood="think" en="Let's compare!" vi="Cùng so với đáp án mẫu nhé." />}
+          <p className="verdict">{correct ? '✓ Chính xác · Correct' : word ? '✗ Chưa đúng · Not quite' : 'Đáp án mẫu · Model answer'}</p>
           {!correct && (
             <p className="answer">
               {sent ? missingWords(answer, input).map((t, i) => <span key={i} className={t.miss ? 'miss' : ''}>{t.w} </span>) : answer}

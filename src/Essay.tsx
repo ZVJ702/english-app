@@ -3,6 +3,7 @@ import { TOPICS } from './data/writing'
 import { saveEssay, useStore } from './store'
 import { copy } from './util'
 import { L, Page } from './ui'
+import { BuddySays } from './Buddy'
 
 export function Essay({ onBack }: { onBack: () => void }) {
   const s = useStore()
@@ -13,14 +14,17 @@ export function Essay({ onBack }: { onBack: () => void }) {
   if (!topic) {
     return (
       <Page title={<L vi="Luyện viết bài" en="Writing practice" />} onBack={onBack}>
-        <p className="muted">Chọn một đề. Bài viết được lưu tự động và đồng bộ giữa các thiết bị.</p>
+        <BuddySays mood="happy" size={84} en="Pick a topic!" vi="Chọn một đề. Bài viết được lưu tự động." />
         {TOPICS.map((t) => {
           const n = (s.essays[t.id]?.text.trim().match(/\S+/g) ?? []).length
           return (
-            <button key={t.id} className="card row" onClick={() => { setId(t.id); setCopied(false) }}>
-              <span className="tag">{t.kind}{n > 0 && ` · ${n} từ`}</span>
-              <span>{t.en}</span>
-              <span className="muted small">{t.vi}</span>
+            <button key={t.id} className="card row feature" onClick={() => { setId(t.id); setCopied(false) }}>
+              <span className="icon">{t.kind.startsWith('IELTS') ? '🎓' : t.kind === 'Email' ? '✉️' : '📝'}</span>
+              <span>
+                <span className="tag write">{t.kind}{n > 0 && ` · ${n} từ`}</span>
+                <span>{t.en}</span>
+                <span className="muted small">{t.vi}</span>
+              </span>
             </button>
           )
         })}

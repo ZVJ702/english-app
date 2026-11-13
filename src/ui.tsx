@@ -15,7 +15,7 @@ export function Page({ title, onBack, children }: { title: ReactNode; onBack?: (
   )
 }
 
-const COLORS = ['#7c5cff', '#ff7a59', '#ffc93c', '#22c58b', '#3ba7ff', '#ff5fa2']
+const COLORS = ['#c3b8ee', '#f7a8c0', '#ffe08a', '#a9dcc0', '#a9d4f5', '#f3bfa8']
 /** Pháo giấy ăn mừng khi xong phiên học. */
 export function Confetti() {
   return (

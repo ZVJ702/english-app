@@ -3,6 +3,7 @@ import { QUESTIONS } from './data/placement'
 import type { Level } from './data/vocab'
 import { setLevel } from './store'
 import { L, Page } from './ui'
+import { BuddySays } from './Buddy'
 
 function levelFrom(answers: number[]): Level {
   const pass = (lv: Level) => {
@@ -28,6 +29,7 @@ export function Placement({ onDone, onSkip }: { onDone: () => void; onSkip?: () 
     return (
       <Page title={<L vi="Kết quả xếp lớp" en="Placement result" />}>
         <section className="card center">
+          <BuddySays mood="cheer" size={96} en="All done!" vi="Xong rồi, đây là kết quả của bạn." />
           <p className="big">{lv}</p>
           <p>Đúng {right}/{QUESTIONS.length} câu · {right}/{QUESTIONS.length} correct</p>
           <p className="muted">{NOTE[lv]} Đây chỉ là ước lượng từ 20 câu ngữ pháp; bạn đổi được trong Cài đặt.</p>
