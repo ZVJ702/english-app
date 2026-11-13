@@ -5,9 +5,18 @@ import { Essay } from './Essay'
 import { Placement } from './Placement'
 import { countDue, countNew, Session } from './Session'
 import { Settings } from './Settings'
-import { syncNow, syncReady, today, useStore } from './store'
+import { setLevel, syncNow, syncReady, today, useStore } from './store'
 import { L, Page } from './ui'
 import { Buddy, BuddySays } from './Buddy'
+
+const LADDER = [
+  { id: 'A1', vi: 'Vỡ lòng', ielts: 'IELTS 1–2.5' },
+  { id: 'A2', vi: 'Sơ cấp', ielts: 'IELTS 3–3.5' },
+  { id: 'B1', vi: 'Trung cấp', ielts: 'IELTS 4–5' },
+  { id: 'B2', vi: 'Trên trung cấp', ielts: 'IELTS 5.5–6.5' },
+  { id: 'C1', vi: 'Cao cấp', ielts: 'IELTS 7–8' },
+  { id: 'C2', vi: 'Thành thạo', ielts: 'IELTS 8.5–9' },
+]
 
 type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'settings' } | { name: 'placement' }
 
@@ -48,6 +57,11 @@ export default function App() {
   const activeDays = week.filter((d) => d.n > 0).length
   const hour = new Date().getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
+  const cur = LADDER.findIndex((l) => l.id === s.level)
+  const lvItems = [...WORDS, ...SENTENCES].filter((x) => x.level === s.level)
+  const lvLearned = lvItems.filter((x) => s.cards[x.id]).length
+  const lvPct = Math.round((lvLearned / Math.max(1, lvItems.length)) * 100)
+  const next = s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
   const TILES = [
     { m: 5, icon: '☕', vi: 'Nhanh', en: 'Quick', cls: 't1' },
     { m: 15, icon: '🎯', vi: 'Vừa đủ', en: 'Focused', cls: 't2' },
@@ -71,6 +85,32 @@ export default function App() {
           <div className="bar"><i style={{ width: `${(learned / total) * 100}%` }} /></div>
           <span>Đã học {learned}/{total} · {Math.round((learned / total) * 100)}%</span>
         </div>
+      </section>
+
+      <section className="card ladder-card">
+        <h2><L vi="Lộ trình cấp độ" en="Level path" /></h2>
+        <div className="ladder">
+          {LADDER.map((lv, i) => (
+            <div key={lv.id} className={`step ${i < cur ? 'done' : i === cur ? 'now' : ''}`}>
+              <span className="cap">{i === cur ? 'Hiện tại' : i === 0 ? 'Thấp nhất' : i === LADDER.length - 1 ? 'Cao nhất' : '\u00a0'}</span>
+              <span className="dot">{i < cur ? '✓' : lv.id}</span>
+              <span className="name">{lv.vi}</span>
+              <span className="ielts">{lv.ielts}</span>
+            </div>
+          ))}
+        </div>
+        <div className="lv-progress">
+          <div className="bar"><i style={{ width: `${lvPct}%` }} /></div>
+          <span>{lvLearned}/{lvItems.length} mục cấp {s.level}</span>
+        </div>
+        {next && lvPct >= 80 ? (
+          <button className="primary" onClick={() => setLevel(next)}><L vi={`Lên cấp ${next}`} en={`Move up to ${next}`} /></button>
+        ) : (
+          <p className="muted small">
+            {next ? `Học được 80% nội dung cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
+              : 'Đây là cấp cao nhất app đang có nội dung. C1 và C2 sẽ được thêm sau.'}
+          </p>
+        )}
       </section>
 
       <div className="stats">

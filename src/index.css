@@ -169,3 +169,20 @@ form .primary, .card > .primary { width: 100%; }
 .credits { padding-left: 18px; font-size: .8rem; color: var(--muted); max-height: 260px; overflow: auto; }
 .credits a { color: var(--accent); font-weight: 700; }
 summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+
+/* Lộ trình cấp độ */
+.ladder { display: flex; position: relative; margin: 6px 0 12px; }
+.ladder::before { content: ''; position: absolute; left: 8%; right: 8%; top: 37px; height: 4px; background: var(--line); border-radius: 2px; }
+.step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; text-align: center; min-width: 0; }
+.step .cap { font-size: .54rem; font-weight: 900; color: var(--accent); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+.step .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 900;
+  background: var(--card); border: 3px solid var(--line); color: var(--muted); }
+.step.done .dot { background: var(--mint); border-color: var(--mint-d); color: var(--mint-ink); }
+.step.now .dot { width: 42px; height: 42px; margin: -4px 0; font-size: .95rem; background: var(--accent); border-color: var(--accent-d); color: var(--accent-ink);
+  box-shadow: 0 0 0 5px var(--accent-soft); }
+.step .name { font-size: .68rem; font-weight: 800; line-height: 1.15; }
+.step .ielts { font-size: .54rem; white-space: nowrap; color: var(--muted); font-weight: 700; line-height: 1.15; }
+.step:not(.now):not(.done) .name { color: var(--muted); }
+.lv-progress { display: flex; align-items: center; gap: 10px; font-size: .8rem; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
+.lv-progress .bar { flex: 1; }
+.ladder-card > p:last-child { margin: 0; }
