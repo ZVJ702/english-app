@@ -1,8 +1,8 @@
 // Infi — nhân vật đồng hành hình ký hiệu vô cực (∞), có tay, chân và hai mắt nằm trong hai vòng.
 export type Mood = 'happy' | 'wave' | 'cheer' | 'sad' | 'sleep' | 'think'
 
-const INK = '#3d3560'
-const LIMB = '#9a8ee8'
+const INK = '#2c4438'
+const LIMB = '#63c08c'
 const LOOP = 'M70,48 C60,33 52,27 42,27 C28,27 14,36 14,48 C14,60 28,69 42,69 C52,69 60,63 70,48 C80,33 88,27 98,27 C112,27 126,36 126,48 C126,60 112,69 98,69 C88,69 80,63 70,48 Z'
 
 export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: number }) {
@@ -23,7 +23,7 @@ export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: numbe
     <svg className={`buddy ${mood}`} width={size * 1.22} height={size} viewBox="0 0 140 115" role="img" aria-label="Infi, bạn đồng hành hình vô cực">
       <defs>
         <linearGradient id="infi-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#b9aef7" /><stop offset="1" stopColor="#f7b3cb" />
+          <stop offset="0" stopColor="#b5ecb0" /><stop offset="1" stopColor="#7fd6a4" />
         </linearGradient>
       </defs>
       <ellipse cx="70" cy="108" rx="40" ry="4" fill="#000" opacity=".08" />
@@ -42,7 +42,7 @@ export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: numbe
           : mood === 'sad' ? <path d="M125 52 L135 72" /> : <path d="M125 50 L138 62" />}
       </g>
       {/* thân hình vô cực */}
-      <path d={LOOP} fill="none" stroke="#8b7fe8" strokeWidth="20" strokeLinejoin="round" />
+      <path d={LOOP} fill="none" stroke="#4fae7a" strokeWidth="20" strokeLinejoin="round" />
       <path d={LOOP} fill="none" stroke="url(#infi-body)" strokeWidth="15" strokeLinejoin="round" />
       <path d="M26 32 Q40 24 54 30" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".6" />
       <path d="M86 30 Q98 24 114 32" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".6" />
@@ -60,7 +60,7 @@ export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: numbe
         : mood === 'think' ? <path d="M66 50 L74 49" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
         : <path d="M64 47 Q70 55 76 47" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />}
       {mood === 'sleep' && (
-        <g className="zzz" fill="#8b7fe8" fontWeight="900" fontFamily="inherit">
+        <g className="zzz" fill="#4fae7a" fontWeight="900" fontFamily="inherit">
           <text x="116" y="22" fontSize="16">z</text><text x="128" y="11" fontSize="12">z</text>
         </g>
       )}
@@ -69,7 +69,7 @@ export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: numbe
           <path d="M66 6 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" /><path d="M22 4 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" />
         </g>
       )}
-      {mood === 'think' && <g fill="#8b7fe8" opacity=".8"><circle cx="124" cy="22" r="3" /><circle cx="132" cy="11" r="5" /></g>}
+      {mood === 'think' && <g fill="#4fae7a" opacity=".8"><circle cx="124" cy="22" r="3" /><circle cx="132" cy="11" r="5" /></g>}
     </svg>
   )
 }
