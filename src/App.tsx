@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { EXERCISES, GRAMMAR } from './data/grammar'
-import { Grammar } from './Grammar'
+import { GRAMMAR, PLANNED } from './data/grammar'
+import { PHRASES } from './data/phrases'
+import { EXERCISES } from './data/units'
+import { Library } from './Grammar'
 import { Placement } from './Placement'
 import { countDue, countNew, known, Session } from './Session'
 import { Decks } from './Decks'
@@ -19,7 +21,7 @@ const LADDER = [
   { id: 'C2', vi: 'Thành thạo', ielts: 'IELTS 8.5–9' },
 ]
 
-type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
+type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
 
 export default function App() {
   const s = useStore()
@@ -43,7 +45,8 @@ export default function App() {
   }
   if (view.name === 'placement') return <Placement onDone={home} onSkip={s.level ? home : undefined} />
   if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
-  if (view.name === 'grammar') return <Grammar onBack={home} />
+  if (view.name === 'grammar') return <Library mode="grammar" onBack={home} />
+  if (view.name === 'phrases') return <Library mode="phrases" onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} onRetest={() => setView({ name: 'placement' })} />
 
@@ -64,7 +67,7 @@ export default function App() {
   const lvItems = GRAMMAR.filter((t) => t.level === s.level).flatMap((t) => t.exercises)
   const lvLearned = lvItems.filter((x) => s.cards[x.id]).length
   const lvPct = Math.round((lvLearned / Math.max(1, lvItems.length)) * 100)
-  const next = s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
+  const next = s.level === 'A1' ? 'A2' : s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
   const TILES = [
     { m: 5, icon: '☕', vi: 'Nhanh', en: 'Quick', cls: 't1' },
     { m: 15, icon: '🎯', vi: 'Vừa đủ', en: 'Focused', cls: 't2' },
@@ -141,7 +144,16 @@ export default function App() {
         <span className="icon">📘</span>
         <span>
           <b><L vi="Ngữ pháp" en="Grammar" /></b>
-          <span className="muted small">{GRAMMAR.length} chủ đề từ A2 đến B2, có bài đọc và bài tập ôn theo lịch.</span>
+          <span className="muted small">{GRAMMAR.length} chủ đề từ A1 đến B2 đã có bài, {Object.values(PLANNED).flat().length} chủ đề nữa sắp có.</span>
+        </span>
+        <span className="chev">›</span>
+      </button>
+
+      <button className="card row feature" onClick={() => setView({ name: 'phrases' })}>
+        <span className="icon">💬</span>
+        <span>
+          <b><L vi="Giao tiếp" en="Conversation" /></b>
+          <span className="muted small">{PHRASES.length} tình huống: đời sống, công việc, du lịch, IELTS Speaking.</span>
         </span>
         <span className="chev">›</span>
       </button>
@@ -165,7 +177,7 @@ export default function App() {
           ))}
         </div>
         <p className="muted small">
-          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {notes.length} từ và {EXERCISES.length} bài tập ngữ pháp.
+          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {notes.length} từ và {EXERCISES.length} bài tập ngữ pháp, giao tiếp.
         </p>
       </section>
 

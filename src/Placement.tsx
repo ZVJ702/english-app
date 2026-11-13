@@ -10,11 +10,12 @@ function levelFrom(answers: number[]): Level {
     const qs = QUESTIONS.map((q, i) => ({ q, i })).filter((x) => x.q.level === lv)
     return qs.filter((x) => answers[x.i] === x.q.a).length / qs.length >= 0.6
   }
-  if (!pass('A2')) return 'A2'
+  if (!pass('A2')) return 'A1'
   if (!pass('B1')) return 'A2'
   return pass('B2') ? 'B2' : 'B1'
 }
 const NOTE: Record<Level, string> = {
+  A1: 'App sẽ bắt đầu từ nền tảng: động từ to be, mạo từ, cách đặt câu hỏi.',
   A2: 'Bạn nắm được nền tảng cơ bản. App sẽ bắt đầu từ các từ và mẫu câu thông dụng.',
   B1: 'Bạn ở mức trung cấp. App sẽ tập trung vào từ vựng B1 và các cấu trúc câu phức.',
   B2: 'Bạn ở mức trung cấp trên. App sẽ ưu tiên từ học thuật và mẫu câu cho IELTS Writing.',

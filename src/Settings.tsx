@@ -28,6 +28,7 @@ export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: (
       <section className="card">
         <h2><L vi="Trình độ" en="Level" /></h2>
         <select value={s.level ?? 'B1'} onChange={(e) => setLevel(e.target.value as Level)}>
+          <option value="A1">A1 — Vỡ lòng · Beginner</option>
           <option value="A2">A2 — Sơ cấp · Elementary</option>
           <option value="B1">B1 — Trung cấp · Intermediate</option>
           <option value="B2">B2 — Trung cấp trên · Upper-intermediate</option>

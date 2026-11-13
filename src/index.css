@@ -207,3 +207,21 @@ summary { cursor: pointer; font-weight: 700; color: var(--accent); }
 .group { display: flex; flex-direction: column; gap: 10px; }
 .group .sec { display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; }
 .card.feature .icon.full { background: var(--mint); color: var(--mint-ink); font-weight: 900; }
+
+/* Bài học chi tiết và các dạng bài tập */
+.compare { background: var(--butter); color: var(--butter-ink); border-radius: 14px; padding: 10px 14px; }
+.compare b { display: block; margin-bottom: 2px; }
+.mistakes { background: var(--bad-bg); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
+.mistakes p { margin: 8px 0 0; display: flex; flex-direction: column; }
+.mistakes s { color: var(--bad); } .mistakes .fix { color: var(--ok); font-weight: 800; }
+.exercise { display: flex; flex-direction: column; align-items: stretch; }
+.exercise .tag { align-self: flex-start; }
+.exercise > .primary { width: 100%; margin-top: 10px; }
+button.play { align-self: flex-start; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 8px; background: var(--lav); border-color: var(--lav-d); color: var(--lav-ink); box-shadow: 0 4px 0 var(--lav-d); }
+.line { min-height: 58px; border-bottom: 3px dashed var(--line); margin-bottom: 14px; padding-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; }
+button.chip-w { min-height: 42px; padding: 6px 12px; border-radius: 12px; font-weight: 700; }
+.bank button.chip-w:disabled { opacity: .25; }
+.line button.chip-w { background: var(--accent-soft); border-color: var(--lav-d); }
+.planned { font-size: .88rem; color: var(--muted); padding: 0 6px; }
+.planned ul { margin: 6px 0 0; padding-left: 20px; }
