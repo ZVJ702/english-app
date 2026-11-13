@@ -6,7 +6,7 @@ import { dueTime, getState, grade } from './store'
 import { copy, missingWords, sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
-import { pictureFor } from './data/pictures'
+import { photoUrl, pictureFor } from './data/pictures'
 
 const WORD = new Map(WORDS.map((w) => [w.id, w]))
 const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
@@ -133,7 +133,9 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {word && item.phase === 'intro' && (
         <section className="card slide intro" key={`${item.id}-${item.phase}-${done}`}>
           <span className="tag new">✨ Từ mới · New word · {word.level}</span>
-          <div className="picture" aria-hidden="true">{pictureFor(word.word, word.pos)}</div>
+          {photoUrl(word.word)
+            ? <img className="photo" src={photoUrl(word.word)!} alt="" />
+            : <div className="picture" aria-hidden="true">{pictureFor(word.word, word.pos)}</div>}
           <h2 className="word">{word.word} <button className="ghost" onClick={() => speak(word.word)} aria-label="Nghe · Listen">🔊</button></h2>
           <p><em>{word.pos}</em> — {word.vi}</p>
           <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>
@@ -146,7 +148,9 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {word && item.phase === 'test' && (
         <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
           <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.level}</span>
-          <span className="picture sm" aria-hidden="true">{pictureFor(word.word, word.pos)}</span>
+          {photoUrl(word.word)
+            ? <img className="photo sm" src={photoUrl(word.word)!} alt="" />
+            : <span className="picture sm" aria-hidden="true">{pictureFor(word.word, word.pos)}</span>}
           <p className="prompt">{word.vi} <em>({word.pos})</em></p>
           <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>

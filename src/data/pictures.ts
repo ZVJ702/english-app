@@ -23,3 +23,10 @@ export const PICTURES: Record<string, string> = {
 }
 const BY_POS: Record<string, string> = { adv: '🔗', conj: '🔗', prep: '🔗', phr: '🧩', 'phr v': '🧩' }
 export const pictureFor = (word: string, pos: string) => PICTURES[word] ?? BY_POS[pos] ?? '📖'
+
+// Ảnh thật từ Wikimedia Commons (tệp nằm trong public/img, thông tin tác giả trong photos.json).
+import photos from './photos.json'
+export interface Credit { artist: string; license: string; page: string }
+export const PHOTOS = photos as Record<string, Credit>
+export const photoUrl = (word: string) =>
+  PHOTOS[word] ? `${import.meta.env.BASE_URL}img/${word.replace(/ /g, '_')}.jpg` : null

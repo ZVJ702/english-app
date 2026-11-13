@@ -61,10 +61,10 @@ label { display: block; font-size: .85rem; font-weight: 700; color: var(--muted)
 form .primary, .card > .primary { width: 100%; }
 .muted { color: var(--muted); } .small { font-size: .85rem; }
 
-/* Bơ và bong bóng lời nói */
+/* Infi và bong bóng lời nói */
 .buddy { flex: none; overflow: visible; animation: bob 3.2s ease-in-out infinite; }
 .buddy.cheer { animation: jump .9s ease-in-out 2; }
-.buddy .arm-wave { transform-origin: 93px 70px; animation: wave 1.1s ease-in-out infinite; }
+.buddy .arm-wave { transform-origin: 124px 42px; animation: wave 1.1s ease-in-out infinite; }
 .buddy .sparkle { animation: twinkle 1s ease-in-out infinite; transform-origin: center; }
 .buddy .zzz { animation: twinkle 2s ease-in-out infinite; }
 .says { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; text-align: left; }
@@ -161,3 +161,11 @@ form .primary, .card > .primary { width: 100%; }
 @keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .slide { animation: slide .3s ease; } .bounce { animation: bounce .35s ease; } .shake { animation: shake .4s ease; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .confetti { display: none; } }
+
+/* Ảnh minh họa thật */
+.photo { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 20px; margin: 4px 0 12px; background: var(--line); }
+.photo.sm { position: absolute; top: 12px; right: 14px; width: 84px; height: 63px; border-radius: 14px; margin: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+.card.slide:has(.photo.sm) .prompt { padding-right: 92px; }
+.credits { padding-left: 18px; font-size: .8rem; color: var(--muted); max-height: 260px; overflow: auto; }
+.credits a { color: var(--accent); font-weight: 700; }
+summary { cursor: pointer; font-weight: 700; color: var(--accent); }

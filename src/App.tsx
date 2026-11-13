@@ -21,7 +21,7 @@ export default function App() {
     return (
       <Page title="English App">
         <section className="card">
-          <BuddySays mood="wave" size={110} en="Hi, I'm Bơ!" vi="Mình là Bơ, bạn học cùng bạn." />
+          <BuddySays mood="wave" size={110} en="Hi, I'm Infi!" vi="Mình là Infi, bạn học cùng bạn." />
           <h2><L vi="Chào bạn!" en="Welcome!" /></h2>
           <p>Trước tiên, làm một bài kiểm tra ngắn 20 câu (khoảng 5 phút) để app chọn nội dung vừa sức.</p>
           <p className="muted small">A short 20-question test picks the right starting level.</p>
