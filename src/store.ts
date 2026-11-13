@@ -9,6 +9,11 @@ export interface Shared {
   cards: Record<string, Rec>
   essays: Record<string, { text: string; u: number }>
   days: Record<string, number>
+  /** Số từ mới đã học theo từng ngày. */
+  newWords: Record<string, number>
+  /** Số từ mới tối đa mỗi ngày do người học chọn. */
+  dailyNew: number
+  dailyNewU: number
 }
 export interface State extends Shared {
   sync: { url: string; code: string; last: number }
@@ -17,7 +22,7 @@ export interface State extends Shared {
 const KEY = 'english-app-v1'
 const DEFAULT_SYNC_URL: string = import.meta.env.VITE_SYNC_URL ?? ''
 const empty = (): State => ({
-  level: null, levelU: 0, cards: {}, essays: {}, days: {},
+  level: null, levelU: 0, cards: {}, essays: {}, days: {}, newWords: {}, dailyNew: 10, dailyNewU: 0,
   sync: { url: DEFAULT_SYNC_URL, code: '', last: 0 },
 })
 
@@ -62,6 +67,31 @@ export function grade(id: string, g: Grade): Date {
 }
 export const dueTime = (r: Rec) => new Date(r.c.due).getTime()
 
+export function setDailyNew(n: number) { setState({ ...state, dailyNew: n, dailyNewU: Date.now() }) }
+/** Ghi nhận một từ mới vừa được học hôm nay. */
+export function addNewWord() {
+  const d = today()
+  setState({ ...state, newWords: { ...state.newWords, [d]: (state.newWords[d] ?? 0) + 1 } })
+}
+export const newWordsLeft = () => Math.max(0, state.dailyNew - (state.newWords[today()] ?? 0))
+
+/**
+ * Chuỗi ngày học. Nghỉ một ngày không làm đứt chuỗi; nghỉ hai ngày liền thì chuỗi bắt đầu lại.
+ * Trả về số ngày có học trong chuỗi hiện tại và chuỗi dài nhất từ trước đến nay.
+ */
+export function streaks(days: Record<string, number>): { current: number; best: number } {
+  const active = Object.keys(days).filter((d) => days[d] > 0).sort()
+  const num = (d: string) => Math.round(new Date(d + 'T12:00:00').getTime() / 86_400_000)
+  let best = 0, run = 0, prev = -10
+  for (const d of active) {
+    run = num(d) - prev <= 2 ? run + 1 : 1
+    prev = num(d)
+    best = Math.max(best, run)
+  }
+  const current = num(today()) - prev <= 2 ? run : 0
+  return { current, best }
+}
+
 export function setLevel(level: Level) { setState({ ...state, level, levelU: Date.now() }) }
 export function saveEssay(id: string, text: string) {
   setState({ ...state, essays: { ...state.essays, [id]: { text, u: Date.now() } } })
@@ -69,7 +99,7 @@ export function saveEssay(id: string, text: string) {
 
 // ---------- Đồng bộ & sao lưu ----------
 function pickShared(s: Shared): Shared {
-  return { level: s.level, levelU: s.levelU, cards: s.cards, essays: s.essays, days: s.days }
+  return { level: s.level, levelU: s.levelU, cards: s.cards, essays: s.essays, days: s.days, newWords: s.newWords, dailyNew: s.dailyNew, dailyNewU: s.dailyNewU }
 }
 /** Gộp hai bản dữ liệu: mỗi mục lấy bản được sửa gần nhất. */
 export function merge(a: Shared, b: Partial<Shared>): Shared {
@@ -78,8 +108,13 @@ export function merge(a: Shared, b: Partial<Shared>): Shared {
     for (const [k, v] of Object.entries(y)) if (!out[k] || v.u > out[k].u) out[k] = v
     return out
   }
-  const days = { ...a.days }
-  for (const [k, v] of Object.entries(b.days ?? {})) days[k] = Math.max(days[k] ?? 0, v)
+  const maxOf = (x: Record<string, number>, y: Record<string, number> = {}) => {
+    const out = { ...x }
+    for (const [k, v] of Object.entries(y)) out[k] = Math.max(out[k] ?? 0, v)
+    return out
+  }
+  const days = maxOf(a.days, b.days)
+  const goalNewer = (b.dailyNewU ?? 0) > a.dailyNewU
   const bNewer = (b.levelU ?? 0) > a.levelU
   return {
     level: bNewer ? b.level ?? a.level : a.level,
@@ -87,6 +122,9 @@ export function merge(a: Shared, b: Partial<Shared>): Shared {
     cards: newer(a.cards, b.cards),
     essays: newer(a.essays, b.essays),
     days,
+    newWords: maxOf(a.newWords, b.newWords),
+    dailyNew: goalNewer ? b.dailyNew ?? a.dailyNew : a.dailyNew,
+    dailyNewU: goalNewer ? b.dailyNewU! : a.dailyNewU,
   }
 }
 

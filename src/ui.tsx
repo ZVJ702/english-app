@@ -30,14 +30,14 @@ export function Confetti() {
     </div>
   )
 }
-/** Vòng tròn tiến độ. */
-export function Ring({ value, children }: { value: number; children: ReactNode }) {
+/** Vòng tròn tiến độ; tone chọn màu (a, b, c). */
+export function Ring({ value, tone = 'a', children }: { value: number; tone?: string; children: ReactNode }) {
   const r = 42, c = 2 * Math.PI * r
   return (
-    <div className="ring">
+    <div className={`ring ${tone}`}>
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <circle cx="50" cy="50" r={r} className="track" />
-        <circle cx="50" cy="50" r={r} className="fill" strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, value))} />
+        <circle cx="50" cy="50" r={r} className="fill" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0, Math.min(1, value)))} />
       </svg>
       <div className="ring-in">{children}</div>
     </div>

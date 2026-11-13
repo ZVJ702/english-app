@@ -7,7 +7,7 @@ import type { Level } from './data/vocab'
 import { allNotes, mediaUrl, NOTE } from './decks'
 import { Gap, Listen, Mcq, Order, Speak, type Answer } from './Exercise'
 import { Lesson } from './Grammar'
-import { dueTime, getState, grade } from './store'
+import { addNewWord, dueTime, getState, grade, newWordsLeft } from './store'
 import { sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
@@ -15,8 +15,8 @@ import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
 const EX = new Map(EXERCISES.map((e) => [e.id, e]))
 const TOPIC = new Map(UNITS.map((t) => [t.id, t]))
 const ORDER: Record<Level, Level[]> = { A1: ['A1', 'A2', 'B1', 'B2'], A2: ['A2', 'A1', 'B1', 'B2'], B1: ['B1', 'B2', 'A2', 'A1'], B2: ['B2', 'B1', 'A2', 'A1'] }
-/** Số mục mới mỗi phiên: [từ vựng, bài tập ngữ pháp, mẫu câu giao tiếp]. */
-const NEW_COUNT: Record<number, [number, number, number]> = { 5: [3, 2, 1], 15: [6, 4, 2], 30: [12, 8, 4] }
+/** Số mục mới tối đa mỗi phiên: [từ vựng, bài tập ngữ pháp, mẫu câu giao tiếp]. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
+const NEW_COUNT: Record<number, [number, number, number]> = { 5: [5, 2, 1], 15: [12, 4, 2], 30: [30, 8, 4] }
 const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu', listen: 'Nghe chép', speak: 'Nói' }
 
 /** intro = giới thiệu từ mới; lesson = đọc bài (id là mã chủ đề); test = kiểm tra. */
@@ -66,7 +66,8 @@ function buildQueue(minutes: number): Item[] {
     .filter(([id, r]) => known(id) && dueTime(r) <= now)
     .sort((a, b) => dueTime(a[1]) - dueTime(b[1]))
     .map(([id]) => ({ id, phase: 'test' }))
-  const [nw, ng, np] = NEW_COUNT[minutes] ?? [6, 4, 2]
+  const [cap, ng, np] = NEW_COUNT[minutes] ?? [12, 4, 2]
+  const nw = Math.min(cap, newWordsLeft())
   // Từ mới lấy từ các bộ thẻ đã nhập, theo đúng thứ tự trong bộ thẻ.
   const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, nw).map((n): Item => ({ id: n.id, phase: 'intro' }))
   // Bài tập mới: ngữ pháp ưu tiên cấp hiện tại; mẫu câu theo thứ tự. Chủ đề chưa học lần nào thì cho đọc bài trước.
@@ -206,7 +207,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
           <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>
           <p>{word.vi}</p>
           {word.ex && <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>}
-          <button className="primary" onClick={() => { setFresh((n) => n + 1); advance({ id: item.id, phase: 'test' }) }}>
+          <button className="primary" onClick={() => { setFresh((n) => n + 1); addNewWord(); advance({ id: item.id, phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
         </section>

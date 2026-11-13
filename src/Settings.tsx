@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Level } from './data/vocab'
-import { exportData, importData, newSyncCode, setLevel, setSync, syncNow, syncReady, useStore } from './store'
+import { exportData, importData, newSyncCode, setDailyNew, setLevel, setSync, syncNow, syncReady, useStore } from './store'
 import { L, Page } from './ui'
 
 export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: () => void }) {
@@ -34,6 +34,19 @@ export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: (
           <option value="B2">B2 — Trung cấp trên · Upper-intermediate</option>
         </select>
         <button className="ghost line" onClick={onRetest}><L vi="Làm lại bài xếp lớp" en="Retake placement test" /></button>
+      </section>
+
+      <section className="card">
+        <h2><L vi="Số từ mới mỗi ngày" en="New words per day" /></h2>
+        <div className="grades">
+          {[5, 10, 15, 20, 30].map((n) => (
+            <button key={n} className={s.dailyNew === n ? 'primary' : ''} onClick={() => setDailyNew(n)}>{n}</button>
+          ))}
+        </div>
+        <p className="muted small">
+          Với {s.dailyNew} từ mỗi ngày, một cuốn 600 từ mất khoảng {Math.ceil(600 / s.dailyNew)} ngày học.
+          Càng nhiều từ mới thì số thẻ phải ôn mỗi ngày càng tăng, thường gấp 5 đến 8 lần số từ mới.
+        </p>
       </section>
 
       <section className="card">

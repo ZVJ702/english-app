@@ -228,3 +228,47 @@ button.chip-w { min-height: 42px; padding: 6px 12px; border-radius: 12px; font-w
 .sounds { background: var(--sky); color: var(--sky-ink); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
 .sounds p { margin: 4px 0 8px; }
 .sounds button.chip-w { background: var(--card); color: var(--ink); }
+
+/* ===== Trang chính mới ===== */
+.home > * { animation: slide .35s ease both; }
+.home > :nth-child(2) { animation-delay: .04s; } .home > :nth-child(3) { animation-delay: .08s; }
+.home > :nth-child(4) { animation-delay: .12s; } .home > :nth-child(5) { animation-delay: .16s; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge.flame { background: var(--card); border-color: var(--line); color: var(--muted); }
+.badge.flame.lit { background: linear-gradient(135deg, #ffd9a0, #ffb199); border-color: #f3a07e; color: #7a2e12; }
+.today h2 { margin-bottom: 12px; }
+.rings { display: flex; justify-content: space-around; gap: 8px; margin-bottom: 16px; }
+.ring { position: relative; width: 31%; max-width: 116px; aspect-ratio: 1; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+.ring .track { stroke: var(--line); }
+.ring .fill { transition: stroke-dashoffset .9s cubic-bezier(.2, .8, .2, 1); }
+.ring.a .fill { stroke: #a59bf0; } .ring.b .fill { stroke: #f3a88f; } .ring.c .fill { stroke: #7fd3ab; }
+.ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.ring-in b { font-size: 1.55rem; font-weight: 900; } .ring-in b small { font-size: .8rem; font-weight: 800; color: var(--muted); }
+.ring-in span { font-size: .72rem; font-weight: 700; color: var(--muted); }
+button.go { width: 100%; min-height: 60px; font-size: 1.08rem; display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: linear-gradient(135deg, #8b7fe8, #b08cf0); border: none; color: #fff; box-shadow: 0 5px 0 #5a4fc0, 0 10px 22px rgba(116, 104, 216, .35); }
+button.go:active:not(:disabled) { box-shadow: 0 1px 0 #5a4fc0; }
+button.go > span:first-child { width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .25); display: grid; place-items: center; font-size: .9rem; }
+.grades.alt { margin-top: 12px; } .grades.alt button { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: .92rem; }
+.tile small { font-size: .75rem; font-weight: 700; opacity: .8; }
+.tile b { font-size: 1rem; }
+
+/* Hoạt động */
+.act-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.weekrow { display: flex; gap: 6px; margin: 6px 0 14px; }
+.day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; border-radius: 16px; }
+.day .dot { width: 34px; height: 34px; max-width: 100%; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: .9rem;
+  border: 2px dashed var(--line); color: transparent; }
+.day.on .dot { border: none; background: linear-gradient(135deg, #8fdcb4, #6cc494); color: #0f3d2a; box-shadow: 0 3px 0 #4fae7a; }
+.day.now { background: var(--accent-soft); } .day.now .lbl { color: var(--accent); }
+.day .lbl { font-size: .74rem; font-weight: 800; color: var(--muted); } .day .cnt { font-size: .72rem; font-weight: 700; color: var(--muted); }
+.day.on .cnt { color: var(--ink); }
+.facts { display: flex; gap: 8px; margin-bottom: 14px; }
+.facts div { flex: 1; background: var(--bg); border-radius: 14px; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; }
+.facts b { font-size: 1.2rem; font-weight: 900; } .facts span { font-size: .72rem; font-weight: 700; color: var(--muted); }
+.heat-title { margin-bottom: 6px; }
+.heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px; }
+.heat i { height: 14px; border-radius: 5px; background: var(--line); }
+.heat i[data-on='1'] { background: #6cc494; } .heat i.future { background: none; border: 1px dashed var(--line); }
