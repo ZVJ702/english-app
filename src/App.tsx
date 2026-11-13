@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { SENTENCES } from './data/writing'
-import { Essay } from './Essay'
+import { EXERCISES, GRAMMAR } from './data/grammar'
+import { Grammar } from './Grammar'
 import { Placement } from './Placement'
 import { countDue, countNew, known, Session } from './Session'
 import { Decks } from './Decks'
@@ -19,7 +19,7 @@ const LADDER = [
   { id: 'C2', vi: 'Thành thạo', ielts: 'IELTS 8.5–9' },
 ]
 
-type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
+type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
 
 export default function App() {
   const s = useStore()
@@ -43,7 +43,7 @@ export default function App() {
   }
   if (view.name === 'placement') return <Placement onDone={home} onSkip={s.level ? home : undefined} />
   if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
-  if (view.name === 'essay') return <Essay onBack={home} />
+  if (view.name === 'grammar') return <Grammar onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} onRetest={() => setView({ name: 'placement' })} />
 
@@ -56,12 +56,12 @@ export default function App() {
   })
   const max = Math.max(1, ...week.map((d) => d.n))
 
-  const total = SENTENCES.length + notes.length
+  const total = EXERCISES.length + notes.length
   const activeDays = week.filter((d) => d.n > 0).length
   const hour = new Date().getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
   const cur = LADDER.findIndex((l) => l.id === s.level)
-  const lvItems = SENTENCES.filter((x) => x.level === s.level)
+  const lvItems = GRAMMAR.filter((t) => t.level === s.level).flatMap((t) => t.exercises)
   const lvLearned = lvItems.filter((x) => s.cards[x.id]).length
   const lvPct = Math.round((lvLearned / Math.max(1, lvItems.length)) * 100)
   const next = s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
@@ -105,13 +105,13 @@ export default function App() {
         </div>
         <div className="lv-progress">
           <div className="bar"><i style={{ width: `${lvPct}%` }} /></div>
-          <span>{lvLearned}/{lvItems.length} câu viết cấp {s.level}</span>
+          <span>{lvLearned}/{lvItems.length} bài ngữ pháp cấp {s.level}</span>
         </div>
         {next && lvPct >= 80 ? (
           <button className="primary" onClick={() => setLevel(next)}><L vi={`Lên cấp ${next}`} en={`Move up to ${next}`} /></button>
         ) : (
           <p className="muted small">
-            {next ? `Học được 80% câu viết cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
+            {next ? `Làm được 80% bài tập ngữ pháp cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
               : 'Đây là cấp cao nhất app đang có nội dung. C1 và C2 sẽ được thêm sau.'}
           </p>
         )}
@@ -137,11 +137,11 @@ export default function App() {
         {due > 30 ? 'Thẻ dồn lại cũng không sao: mỗi phiên chỉ lấy vừa đủ thời gian bạn chọn.' : 'Nghỉ vài ngày cũng không bị phạt — thẻ sẽ chờ bạn.'}
       </p>
 
-      <button className="card row feature" onClick={() => setView({ name: 'essay' })}>
-        <span className="icon">✍️</span>
+      <button className="card row feature" onClick={() => setView({ name: 'grammar' })}>
+        <span className="icon">📘</span>
         <span>
-          <b><L vi="Luyện viết bài" en="Writing practice" /></b>
-          <span className="muted small">Đoạn văn, email và IELTS Task 2 — có nút nhờ Claude chấm.</span>
+          <b><L vi="Ngữ pháp" en="Grammar" /></b>
+          <span className="muted small">{GRAMMAR.length} chủ đề từ A2 đến B2, có bài đọc và bài tập ôn theo lịch.</span>
         </span>
         <span className="chev">›</span>
       </button>
@@ -165,7 +165,7 @@ export default function App() {
           ))}
         </div>
         <p className="muted small">
-          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {notes.length} từ và {SENTENCES.length} câu viết.
+          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {notes.length} từ và {EXERCISES.length} bài tập ngữ pháp.
         </p>
       </section>
 

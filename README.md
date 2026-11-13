@@ -1,17 +1,15 @@
 # English App
 
-Web app cài được (PWA) để học tiếng Anh: từ vựng với lặp lại ngắt quãng (FSRS), luyện viết câu, viết bài, và đồng bộ giữa các thiết bị bằng một mã — không cần tài khoản.
+Web app cài được (PWA) để học từ vựng và ngữ pháp tiếng Anh với lặp lại ngắt quãng (FSRS), và đồng bộ giữa các thiết bị bằng một mã — không cần tài khoản.
 
-## Có gì trong bản đầu tiên
+## Có gì trong app
 
-- **Bài xếp lớp** 20 câu, cho ra A2 / B1 / B2.
-- **Phiên học 5, 15 hoặc 30 phút**: xen kẽ từ vựng từ bộ thẻ bạn nhập (gõ lại từ) và viết câu Việt → Anh. Lịch ôn do thuật toán FSRS tính; nghỉ không bị phạt.
-- **Luyện viết bài**: đoạn văn, email, IELTS Task 2, có nút sao chép để dán vào Claude chấm.
-- **Nhập bộ thẻ Anki (.apkg)**: từ, nghĩa, hình và âm thanh được lưu trên thiết bị và đưa vào lịch ôn.
+- **Bài xếp lớp** 20 câu, cho ra A2 / B1 / B2, và **lộ trình cấp độ** A1 → C2.
+- **Từ vựng từ bộ thẻ Anki (.apkg)**: nhập trong mục **Bộ từ của tôi**; từ, nghĩa, hình và âm thanh lưu trên thiết bị.
+- **Ngữ pháp**: 15 chủ đề (A2–B2), mỗi chủ đề có bài đọc và 4 bài tập trắc nghiệm. Sửa hoặc thêm trong `src/data/grammar.ts`.
+- **Phiên học 5, 15 hoặc 30 phút**: xen kẽ từ vựng và ngữ pháp. Lịch ôn do thuật toán FSRS tính; nghỉ không bị phạt.
 - **Đồng bộ bằng mã** và **sao lưu ra tệp**.
 - Chạy offline sau lần mở đầu tiên; giao diện song ngữ Việt – Anh.
-
-Nội dung có sẵn: 40 câu viết, 8 đề viết. Từ vựng do bạn tự nhập từ bộ thẻ Anki trong mục **Bộ từ của tôi**.
 
 ## Chạy trên máy
 

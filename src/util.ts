@@ -10,18 +10,6 @@ export function normalize(s: string): string {
 }
 export const sameText = (a: string, b: string) => normalize(a) === normalize(b)
 
-/** Đánh dấu các từ trong câu mẫu mà câu của người học còn thiếu. */
-export function missingWords(reference: string, attempt: string): { w: string; miss: boolean }[] {
-  const have = new Map<string, number>()
-  for (const w of normalize(attempt).split(' ')) have.set(w, (have.get(w) ?? 0) + 1)
-  return reference.split(' ').map((w) => {
-    const keys = normalize(w).split(' ').filter(Boolean)
-    const ok = keys.every((k) => (have.get(k) ?? 0) > 0)
-    if (ok) keys.forEach((k) => have.set(k, have.get(k)! - 1))
-    return { w, miss: !ok }
-  })
-}
-
 export function speak(text: string) {
   try {
     const synth = window.speechSynthesis
@@ -33,10 +21,6 @@ export function speak(text: string) {
     if (v) u.voice = v
     synth.speak(u)
   } catch { /* thiết bị không hỗ trợ đọc */ }
-}
-
-export async function copy(text: string): Promise<boolean> {
-  try { await navigator.clipboard.writeText(text); return true } catch { return false }
 }
 
 export function untilText(due: Date): string {

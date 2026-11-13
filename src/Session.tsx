@@ -1,44 +1,47 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Rating, type Grade } from 'ts-fsrs'
+import { EXERCISES, GRAMMAR } from './data/grammar'
 import type { Level } from './data/vocab'
-import { SENTENCES } from './data/writing'
+import { allNotes, mediaUrl, NOTE } from './decks'
+import { Lesson } from './Grammar'
 import { dueTime, getState, grade } from './store'
-import { copy, missingWords, sameText, speak, untilText } from './util'
+import { sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
-import { allNotes, mediaUrl, NOTE } from './decks'
 
-const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
+const EX = new Map(EXERCISES.map((e) => [e.id, e]))
+const TOPIC = new Map(GRAMMAR.map((t) => [t.id, t]))
 const ORDER: Record<Level, Level[]> = { A2: ['A2', 'B1', 'B2'], B1: ['B1', 'B2', 'A2'], B2: ['B2', 'B1', 'A2'] }
+/** Số mục mới mỗi phiên: [từ vựng, bài tập ngữ pháp]. */
 const NEW_COUNT: Record<number, [number, number]> = { 5: [3, 2], 15: [8, 4], 30: [15, 8] }
 
-interface Item { id: string; phase: 'intro' | 'test' }
-interface Vocab { id: string; word: string; pos: string; vi: string; ex: string; tag: string; media?: { deck: string; img?: string; audio?: string } }
+/** intro = giới thiệu từ mới; lesson = đọc bài ngữ pháp (id là mã chủ đề); test = kiểm tra. */
+interface Item { id: string; phase: 'intro' | 'lesson' | 'test' }
+interface Vocab { id: string; word: string; vi: string; ex: string; deck: string; img?: string; audio?: string }
 
-/** Một mục từ vựng: thẻ người dùng nhập từ Anki. */
+/** Thẻ từ vựng người dùng nhập từ Anki; nếu câu ví dụ có chứa từ thì đánh dấu để đục lỗ. */
 function vocab(id: string): Vocab | undefined {
   const n = NOTE.get(id)
   if (!n) return undefined
   const i = n.example.toLowerCase().indexOf(n.word.toLowerCase())
   const ex = i >= 0 ? `${n.example.slice(0, i)}{${n.example.slice(i, i + n.word.length)}}${n.example.slice(i + n.word.length)}` : n.example
-  return { id, word: n.word, pos: '', vi: n.meaning, ex, tag: 'Anki', media: { deck: n.deck, img: n.img, audio: n.audio } }
+  return { id, word: n.word, vi: n.meaning, ex, deck: n.deck, img: n.img, audio: n.audio }
 }
-export const known = (id: string) => SENT.has(id) || NOTE.has(id)
+export const known = (id: string) => EX.has(id) || NOTE.has(id)
 
 function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
   const [url, setUrl] = useState<string | null>(null)
-  const img = v.media?.img, deck = v.media?.deck
   useEffect(() => {
     let live = true
     setUrl(null)
-    if (img && deck) mediaUrl(deck, img).then((u) => { if (live) setUrl(u) })
+    if (v.img) mediaUrl(v.deck, v.img).then((u) => { if (live) setUrl(u) })
     return () => { live = false }
-  }, [img, deck])
-  if (img && url) return <img className={`photo${sm ? ' sm' : ''}`} src={url} alt="" />
-  return sm || img ? null : <div className="picture" aria-hidden="true">📖</div>
+  }, [v.img, v.deck])
+  if (v.img && url) return <img className={`photo${sm ? ' sm' : ''}`} src={url} alt="" />
+  return sm || v.img ? null : <div className="picture" aria-hidden="true">📖</div>
 }
 async function say(v: Vocab) {
-  const url = v.media?.audio ? await mediaUrl(v.media.deck, v.media.audio) : null
+  const url = v.audio ? await mediaUrl(v.deck, v.audio) : null
   if (url) new Audio(url).play().catch(() => speak(v.word))
   else speak(v.word)
 }
@@ -49,7 +52,7 @@ export function countDue(): number {
 }
 export function countNew(): number {
   const c = getState().cards
-  return SENTENCES.filter((s) => !c[s.id]).length + allNotes().filter((n) => !c[n.id]).length
+  return EXERCISES.filter((e) => !c[e.id]).length + allNotes().filter((n) => !c[n.id]).length
 }
 
 function buildQueue(minutes: number): Item[] {
@@ -59,20 +62,30 @@ function buildQueue(minutes: number): Item[] {
     .filter(([id, r]) => known(id) && dueTime(r) <= now)
     .sort((a, b) => dueTime(a[1]) - dueTime(b[1]))
     .map(([id]) => ({ id, phase: 'test' }))
-  const order = ORDER[s.level ?? 'B1']
-  const byLevel = <T extends { id: string; level: Level }>(list: T[]) =>
-    order.flatMap((lv) => list.filter((x) => x.level === lv && !s.cards[x.id]))
-  const [nw, ns] = NEW_COUNT[minutes] ?? [8, 4]
-  // Từ mới lấy từ các bộ thẻ người dùng đã nhập, theo đúng thứ tự trong bộ thẻ.
+  const [nw, ng] = NEW_COUNT[minutes] ?? [8, 4]
+  // Từ mới lấy từ các bộ thẻ đã nhập, theo đúng thứ tự trong bộ thẻ.
   const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, nw).map((n): Item => ({ id: n.id, phase: 'intro' }))
-  const sents = byLevel(SENTENCES).slice(0, ns).map((x): Item => ({ id: x.id, phase: 'test' }))
-  // Học xen kẽ: cứ hai từ mới thì chen một câu viết.
-  const fresh: Item[] = []
-  while (words.length || sents.length) {
-    fresh.push(...words.splice(0, 2))
-    if (sents.length) fresh.push(sents.shift()!)
+  // Bài tập ngữ pháp mới: ưu tiên cấp hiện tại; chủ đề chưa học lần nào thì cho đọc bài trước.
+  const order = ORDER[s.level ?? 'B1']
+  const fresh = order.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)).flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, ng)
+  const grammar: Item[] = []
+  const taught = new Set<string>()
+  for (const e of fresh) {
+    const started = TOPIC.get(e.topic)!.exercises.some((x) => s.cards[x.id])
+    if (!started && !taught.has(e.topic)) { taught.add(e.topic); grammar.push({ id: e.topic, phase: 'lesson' }) }
+    grammar.push({ id: e.id, phase: 'test' })
   }
-  return [...due, ...fresh]
+  // Học xen kẽ: cứ hai từ mới thì chen một mục ngữ pháp (bài đọc luôn đi liền trước bài tập đầu tiên của nó).
+  const mixed: Item[] = []
+  while (words.length || grammar.length) {
+    mixed.push(...words.splice(0, 2))
+    if (grammar.length) {
+      const g = grammar.shift()!
+      mixed.push(g)
+      if (g.phase === 'lesson' && grammar.length) mixed.push(grammar.shift()!)
+    }
+  }
+  return [...due, ...mixed]
 }
 
 const cloze = (ex: string) => ex.replace(/\{[^}]+\}/, '_____')
@@ -88,23 +101,24 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   const [checked, setChecked] = useState(false)
   const [last, setLast] = useState('')
   const [finished, setFinished] = useState(initial.length === 0)
-  const [copied, setCopied] = useState(false)
   const [combo, setCombo] = useState(0)
   const [right, setRight] = useState(0)
   const [fresh, setFresh] = useState(0)
-  const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const item = queue[0]
-  const word = item ? vocab(item.id) : undefined
-  const sent = item && SENT.get(item.id)
+  const lesson = item?.phase === 'lesson' ? TOPIC.get(item.id) : undefined
+  const word = item && item.phase !== 'lesson' ? vocab(item.id) : undefined
+  const ex = item?.phase === 'test' ? EX.get(item.id) : undefined
   useEffect(() => { if (!checked) inputRef.current?.focus() }, [item, checked])
 
   function advance(requeue?: Item) {
     const rest = queue.slice(1)
     if (requeue) rest.splice(Math.min(rest.length, 3), 0, requeue)
-    setInput(''); setChecked(false); setCopied(false)
+    setInput(''); setChecked(false)
     const timeUp = Date.now() - start > minutes * 60_000
-    if (rest.length === 0 || (timeUp && !requeue)) setFinished(true)
+    // Hết giờ thì dừng, nhưng không dừng ngay sau khi vừa đọc bài hay vừa xem từ mới.
+    if (rest.length === 0 || (timeUp && !requeue && item.phase === 'test')) setFinished(true)
     setQueue(rest)
   }
   function rate(g: Grade) {
@@ -119,7 +133,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
     advance(soon ? { id: item.id, phase: 'test' } : undefined)
   }
 
-  if (finished || !item) {
+  if (finished || !item || (!lesson && !word && !ex)) {
     return (
       <Page title={<L vi="Xong phiên học" en="Session complete" />}>
         {done > 0 && <Confetti />}
@@ -133,7 +147,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
           </div>
           <p className="muted">
             {done === 0
-              ? 'Chưa có thẻ nào đến hạn và bạn đã học hết thẻ mới. · Nothing is due right now.'
+              ? 'Chưa có thẻ nào đến hạn và bạn đã học hết nội dung mới. · Nothing is due right now.'
               : `Còn ${countDue()} thẻ đến hạn. Nghỉ cũng được — thẻ sẽ chờ bạn, không bị phạt.`}
           </p>
           <button className="primary" onClick={onExit}><L vi="Về trang chính" en="Home" /></button>
@@ -142,29 +156,35 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
     )
   }
 
-  const answer = word ? word.word : sent!.answers[0]
   const correct = word
     ? sameText(input, word.word) || (!!formIn(word.ex) && sameText(input, formIn(word.ex)))
-    : sent!.answers.some((a) => sameText(input, a))
+    : !!ex && input === String(ex.a)
   const elapsed = Math.min(1, (Date.now() - start) / (minutes * 60_000))
-  const claudePrompt = sent
-    ? `Tôi là người Việt đang học tiếng Anh (trình độ ${getState().level ?? 'B1'}). Tôi vừa dịch một câu.\n\nCâu tiếng Việt: ${sent.vi}\nCâu của tôi: ${input}\nĐáp án mẫu: ${sent.answers[0]}\nĐiểm ngữ pháp: ${sent.point}\n\nHãy: 1) cho biết câu của tôi đúng và tự nhiên chưa, 2) liệt kê từng lỗi kèm giải thích ngắn bằng tiếng Việt, 3) viết lại câu đúng, 4) cho thêm 2 câu tương tự để tôi luyện.`
-    : ''
+  const key = `${item.id}-${item.phase}-${done}`
+  const cheer = CHEERS[done % CHEERS.length], comfort = COMFORTS[done % COMFORTS.length]
 
   return (
     <Page title={<L vi={`Phiên ${minutes} phút`} en={`${minutes}-minute session`} />} onBack={onExit}>
       <div className="bar"><i style={{ width: `${elapsed * 100}%` }} /></div>
       <p className="muted small status">
-        <span>{last || `Còn ${queue.length} thẻ trong hàng đợi · ${queue.length} cards queued`}</span>
+        <span>{last || `Còn ${queue.length} mục trong hàng đợi · ${queue.length} queued`}</span>
         {combo >= 2 && <span className="combo" key={combo}>🔥 {combo} đúng liên tiếp</span>}
       </p>
 
+      {lesson && (
+        <section className="card slide lesson" key={key}>
+          <span className="tag write">📘 Ngữ pháp mới · New grammar · {lesson.level}</span>
+          <Lesson t={lesson} />
+          <button className="primary" onClick={() => advance()}><L vi="Đã hiểu, làm bài tập" en="Got it, let me practise" /></button>
+        </section>
+      )}
+
       {word && item.phase === 'intro' && (
-        <section className="card slide intro" key={`${item.id}-${item.phase}-${done}`}>
-          <span className="tag new">✨ Từ mới · New word · {word.tag}</span>
+        <section className="card slide intro" key={key}>
+          <span className="tag new">✨ Từ mới · New word</span>
           <Pic v={word} />
           <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>
-          <p>{word.pos && <><em>{word.pos}</em> — </>}{word.vi}</p>
+          <p>{word.vi}</p>
           {word.ex && <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>}
           <button className="primary" onClick={() => { setFresh((n) => n + 1); advance({ id: item.id, phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
@@ -173,10 +193,10 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       )}
 
       {word && item.phase === 'test' && (
-        <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
-          <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.tag}</span>
+        <section className="card slide" key={key}>
+          <span className="tag vocab">📚 Từ vựng · Vocabulary</span>
           <Pic v={word} sm />
-          <p className="prompt">{word.vi}{word.pos && <em> ({word.pos})</em>}</p>
+          <p className="prompt">{word.vi}</p>
           {word.ex && <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>}
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
             <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} disabled={checked}
@@ -186,40 +206,31 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
         </section>
       )}
 
-      {sent && (
-        <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
-          <span className="tag write">✍️ Viết câu · Sentence writing · {sent.level}</span>
-          <p className="muted small">{sent.point}</p>
-          <p className="prompt">{sent.vi}</p>
-          <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
-            <textarea ref={inputRef} rows={3} value={input} onChange={(e) => setInput(e.target.value)} disabled={checked}
-              placeholder="Viết câu tiếng Anh · Write the sentence in English" spellCheck={false}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!checked) setChecked(true) } }} />
-            {!checked && <button className="primary"><L vi="Kiểm tra" en="Check" /></button>}
-          </form>
+      {ex && (
+        <section className="card slide" key={key}>
+          <span className="tag write">📘 Ngữ pháp · Grammar · {TOPIC.get(ex.topic)!.vi}</span>
+          <p className="prompt wide">{ex.q}</p>
+          <div className="opts">
+            {ex.opts.map((o, i) => (
+              <button key={i} disabled={checked}
+                className={checked ? (i === ex.a ? 'right' : String(i) === input ? 'wrong' : '') : ''}
+                onClick={() => { setInput(String(i)); setChecked(true) }}>{o}</button>
+            ))}
+          </div>
         </section>
       )}
 
       {checked && (
-        <section className={`card result ${correct ? 'ok bounce' : word ? 'bad shake' : 'neutral slide'}`}>
-          {correct
-            ? <BuddySays mood="cheer" en={CHEERS[done % CHEERS.length][0]} vi={CHEERS[done % CHEERS.length][1]} />
-            : word
-              ? <BuddySays mood="sad" en={COMFORTS[done % COMFORTS.length][0]} vi={COMFORTS[done % COMFORTS.length][1]} />
-              : <BuddySays mood="think" en="Let's compare!" vi="Cùng so với đáp án mẫu nhé." />}
-          <p className="verdict">{correct ? '✓ Chính xác · Correct' : word ? '✗ Chưa đúng · Not quite' : 'Đáp án mẫu · Model answer'}</p>
-          {!correct && (
-            <p className="answer">
-              {sent ? missingWords(answer, input).map((t, i) => <span key={i} className={t.miss ? 'miss' : ''}>{t.w} </span>) : answer}
-              <button className="ghost" onClick={() => (word ? say(word) : speak(answer))} aria-label="Nghe · Listen">🔊</button>
-            </p>
+        <section className={`card result ${correct ? 'ok bounce' : 'bad shake'}`}>
+          {correct ? <BuddySays mood="cheer" en={cheer[0]} vi={cheer[1]} /> : <BuddySays mood="sad" en={comfort[0]} vi={comfort[1]} />}
+          <p className="verdict">{correct ? '✓ Chính xác · Correct' : '✗ Chưa đúng · Not quite'}</p>
+          {word && !correct && (
+            <p className="answer">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></p>
           )}
-          {sent && !correct && (
+          {ex && (
             <>
-              <p className="muted small">Từ tô đậm là phần câu của bạn chưa có. Một câu có thể có nhiều cách viết đúng — tự chấm theo mức độ gần đúng, hoặc nhờ Claude xem.</p>
-              <button className="ghost line" onClick={async () => setCopied(await copy(claudePrompt))}>
-                {copied ? '✓ Đã sao chép — dán vào Claude' : 'Sao chép để hỏi Claude · Copy for Claude'}
-              </button>
+              <p className="answer">{fill(ex.q, ex.opts[ex.a])} <button className="ghost" onClick={() => speak(fill(ex.q, ex.opts[ex.a]))} aria-label="Nghe · Listen">🔊</button></p>
+              <p className="why">{ex.why}</p>
             </>
           )}
           <div className="grades">
@@ -232,8 +243,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
             ) : (
               <>
                 <button className="primary" autoFocus onClick={() => rate(Rating.Again)}><L vi="Học lại" en="Again" /></button>
-                <button onClick={() => rate(Rating.Hard)}><L vi={word ? 'Gõ nhầm' : 'Gần đúng'} en={word ? 'Typo' : 'Close'} /></button>
-                {sent && <button onClick={() => rate(Rating.Good)}><L vi="Cũng đúng" en="Also right" /></button>}
+                {word && <button onClick={() => rate(Rating.Hard)}><L vi="Gõ nhầm" en="Typo" /></button>}
               </>
             )}
           </div>
@@ -241,4 +251,11 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       )}
     </Page>
   )
+}
+
+/** Điền đáp án vào các chỗ trống của câu hỏi (đáp án kiểu "Have / eaten" điền lần lượt từng phần). */
+function fill(q: string, answer: string): string {
+  const parts = answer.split(' / ')
+  let i = 0
+  return q.replace(/___/g, () => parts[Math.min(i++, parts.length - 1)])
 }
