@@ -7,6 +7,7 @@ import { copy, missingWords, sameText, speak, untilText } from './util'
 import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
 import { photoUrl, pictureFor } from './data/pictures'
+import { allNotes, mediaUrl, NOTE } from './decks'
 
 const WORD = new Map(WORDS.map((w) => [w.id, w]))
 const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
@@ -14,28 +15,70 @@ const ORDER: Record<Level, Level[]> = { A2: ['A2', 'B1', 'B2'], B1: ['B1', 'B2',
 const NEW_COUNT: Record<number, [number, number]> = { 5: [3, 2], 15: [8, 4], 30: [15, 8] }
 
 interface Item { id: string; phase: 'intro' | 'test' }
+interface Vocab { id: string; word: string; pos: string; vi: string; ex: string; tag: string; media?: { deck: string; img?: string; audio?: string } }
+
+/** Một mục từ vựng: từ có sẵn của app hoặc thẻ người dùng nhập từ Anki. */
+function vocab(id: string): Vocab | undefined {
+  const w = WORD.get(id)
+  if (w) return { ...w, tag: w.level }
+  const n = NOTE.get(id)
+  if (!n) return undefined
+  const i = n.example.toLowerCase().indexOf(n.word.toLowerCase())
+  const ex = i >= 0 ? `${n.example.slice(0, i)}{${n.example.slice(i, i + n.word.length)}}${n.example.slice(i + n.word.length)}` : n.example
+  return { id, word: n.word, pos: '', vi: n.meaning, ex, tag: 'Anki', media: { deck: n.deck, img: n.img, audio: n.audio } }
+}
+export const known = (id: string) => WORD.has(id) || SENT.has(id) || NOTE.has(id)
+
+function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const img = v.media?.img, deck = v.media?.deck
+  useEffect(() => {
+    let live = true
+    setUrl(null)
+    if (img && deck) mediaUrl(deck, img).then((u) => { if (live) setUrl(u) })
+    return () => { live = false }
+  }, [img, deck])
+  const src = img ? url : photoUrl(v.word)
+  if (src) return <img className={`photo${sm ? ' sm' : ''}`} src={src} alt="" />
+  if (v.media) return sm || img ? null : <div className="picture" aria-hidden="true">📖</div>
+  return sm
+    ? <span className="picture sm" aria-hidden="true">{pictureFor(v.word, v.pos)}</span>
+    : <div className="picture" aria-hidden="true">{pictureFor(v.word, v.pos)}</div>
+}
+async function say(v: Vocab) {
+  const url = v.media?.audio ? await mediaUrl(v.media.deck, v.media.audio) : null
+  if (url) new Audio(url).play().catch(() => speak(v.word))
+  else speak(v.word)
+}
 
 export function countDue(): number {
   const now = Date.now()
-  return Object.entries(getState().cards).filter(([id, r]) => (WORD.has(id) || SENT.has(id)) && dueTime(r) <= now).length
+  return Object.entries(getState().cards).filter(([id, r]) => known(id) && dueTime(r) <= now).length
 }
 export function countNew(): number {
   const c = getState().cards
-  return WORDS.filter((w) => !c[w.id]).length + SENTENCES.filter((s) => !c[s.id]).length
+  return WORDS.filter((w) => !c[w.id]).length + SENTENCES.filter((s) => !c[s.id]).length + allNotes().filter((n) => !c[n.id]).length
 }
 
 function buildQueue(minutes: number): Item[] {
   const s = getState()
   const now = Date.now()
   const due: Item[] = Object.entries(s.cards)
-    .filter(([id, r]) => (WORD.has(id) || SENT.has(id)) && dueTime(r) <= now)
+    .filter(([id, r]) => known(id) && dueTime(r) <= now)
     .sort((a, b) => dueTime(a[1]) - dueTime(b[1]))
     .map(([id]) => ({ id, phase: 'test' }))
   const order = ORDER[s.level ?? 'B1']
   const byLevel = <T extends { id: string; level: Level }>(list: T[]) =>
     order.flatMap((lv) => list.filter((x) => x.level === lv && !s.cards[x.id]))
   const [nw, ns] = NEW_COUNT[minutes] ?? [8, 4]
-  const words = byLevel(WORDS).slice(0, nw).map((w): Item => ({ id: w.id, phase: 'intro' }))
+  // Từ mới: xen kẽ từ có sẵn của app và thẻ người dùng tự nhập.
+  const own = byLevel(WORDS), imported = allNotes().filter((n) => !s.cards[n.id])
+  const pool: { id: string }[] = []
+  for (let i = 0; pool.length < nw && (i < own.length || i < imported.length); i++) {
+    if (imported[i]) pool.push(imported[i])
+    if (own[i]) pool.push(own[i])
+  }
+  const words = pool.slice(0, nw).map((w): Item => ({ id: w.id, phase: 'intro' }))
   const sents = byLevel(SENTENCES).slice(0, ns).map((x): Item => ({ id: x.id, phase: 'test' }))
   // Học xen kẽ: cứ hai từ mới thì chen một câu viết.
   const fresh: Item[] = []
@@ -66,7 +109,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
 
   const item = queue[0]
-  const word = item && WORD.get(item.id)
+  const word = item ? vocab(item.id) : undefined
   const sent = item && SENT.get(item.id)
   useEffect(() => { if (!checked) inputRef.current?.focus() }, [item, checked])
 
@@ -115,7 +158,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
 
   const answer = word ? word.word : sent!.answers[0]
   const correct = word
-    ? sameText(input, word.word) || sameText(input, formIn(word.ex))
+    ? sameText(input, word.word) || (!!formIn(word.ex) && sameText(input, formIn(word.ex)))
     : sent!.answers.some((a) => sameText(input, a))
   const elapsed = Math.min(1, (Date.now() - start) / (minutes * 60_000))
   const claudePrompt = sent
@@ -132,13 +175,11 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
 
       {word && item.phase === 'intro' && (
         <section className="card slide intro" key={`${item.id}-${item.phase}-${done}`}>
-          <span className="tag new">✨ Từ mới · New word · {word.level}</span>
-          {photoUrl(word.word)
-            ? <img className="photo" src={photoUrl(word.word)!} alt="" />
-            : <div className="picture" aria-hidden="true">{pictureFor(word.word, word.pos)}</div>}
-          <h2 className="word">{word.word} <button className="ghost" onClick={() => speak(word.word)} aria-label="Nghe · Listen">🔊</button></h2>
-          <p><em>{word.pos}</em> — {word.vi}</p>
-          <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>
+          <span className="tag new">✨ Từ mới · New word · {word.tag}</span>
+          <Pic v={word} />
+          <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>
+          <p>{word.pos && <><em>{word.pos}</em> — </>}{word.vi}</p>
+          {word.ex && <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>}
           <button className="primary" onClick={() => { setFresh((n) => n + 1); advance({ id: item.id, phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
@@ -147,12 +188,10 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
 
       {word && item.phase === 'test' && (
         <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
-          <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.level}</span>
-          {photoUrl(word.word)
-            ? <img className="photo sm" src={photoUrl(word.word)!} alt="" />
-            : <span className="picture sm" aria-hidden="true">{pictureFor(word.word, word.pos)}</span>}
-          <p className="prompt">{word.vi} <em>({word.pos})</em></p>
-          <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>
+          <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.tag}</span>
+          <Pic v={word} sm />
+          <p className="prompt">{word.vi}{word.pos && <em> ({word.pos})</em>}</p>
+          {word.ex && <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>}
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
             <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} disabled={checked}
               placeholder="Gõ từ tiếng Anh · Type the English word" autoCapitalize="none" autoComplete="off" spellCheck={false} />
@@ -186,7 +225,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
           {!correct && (
             <p className="answer">
               {sent ? missingWords(answer, input).map((t, i) => <span key={i} className={t.miss ? 'miss' : ''}>{t.w} </span>) : answer}
-              <button className="ghost" onClick={() => speak(answer)} aria-label="Nghe · Listen">🔊</button>
+              <button className="ghost" onClick={() => (word ? say(word) : speak(answer))} aria-label="Nghe · Listen">🔊</button>
             </p>
           )}
           {sent && !correct && (

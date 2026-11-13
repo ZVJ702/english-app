@@ -3,7 +3,9 @@ import { WORDS } from './data/vocab'
 import { SENTENCES } from './data/writing'
 import { Essay } from './Essay'
 import { Placement } from './Placement'
-import { countDue, countNew, Session } from './Session'
+import { countDue, countNew, known, Session } from './Session'
+import { Decks } from './Decks'
+import { useDecks } from './decks'
 import { Settings } from './Settings'
 import { setLevel, syncNow, syncReady, today, useStore } from './store'
 import { L, Page } from './ui'
@@ -18,10 +20,11 @@ const LADDER = [
   { id: 'C2', vi: 'Thành thạo', ielts: 'IELTS 8.5–9' },
 ]
 
-type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'settings' } | { name: 'placement' }
+type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
 
 export default function App() {
   const s = useStore()
+  const { decks, notes } = useDecks()
   const [view, setView] = useState<View>({ name: 'home' })
   const home = () => { setView({ name: 'home' }); if (syncReady()) syncNow().catch(() => {}) }
   useEffect(() => { if (syncReady()) syncNow().catch(() => {}) }, [])
@@ -42,18 +45,19 @@ export default function App() {
   if (view.name === 'placement') return <Placement onDone={home} onSkip={s.level ? home : undefined} />
   if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
   if (view.name === 'essay') return <Essay onBack={home} />
+  if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} onRetest={() => setView({ name: 'placement' })} />
 
   const due = countDue()
   const fresh = countNew()
-  const learned = Object.keys(s.cards).length
+  const learned = Object.keys(s.cards).filter(known).length
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i))
     return { label: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getDay()], n: s.days[today(d)] ?? 0 }
   })
   const max = Math.max(1, ...week.map((d) => d.n))
 
-  const total = WORDS.length + SENTENCES.length
+  const total = WORDS.length + SENTENCES.length + notes.length
   const activeDays = week.filter((d) => d.n > 0).length
   const hour = new Date().getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
@@ -142,6 +146,17 @@ export default function App() {
         <span className="chev">›</span>
       </button>
 
+      <button className="card row feature" onClick={() => setView({ name: 'decks' })}>
+        <span className="icon">🗂️</span>
+        <span>
+          <b><L vi="Bộ từ của tôi" en="My decks" /></b>
+          <span className="muted small">
+            {decks.length ? `${decks.length} bộ · ${notes.length} thẻ đã nhập từ Anki.` : 'Nhập bộ thẻ Anki (.apkg) có sẵn hình và âm thanh.'}
+          </span>
+        </span>
+        <span className="chev">›</span>
+      </button>
+
       <section className="card">
         <h2><L vi="7 ngày qua" en="Last 7 days" /></h2>
         <div className="week">
@@ -150,7 +165,7 @@ export default function App() {
           ))}
         </div>
         <p className="muted small">
-          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {WORDS.length} từ và {SENTENCES.length} câu viết.
+          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {WORDS.length + notes.length} từ và {SENTENCES.length} câu viết.
         </p>
       </section>
 
