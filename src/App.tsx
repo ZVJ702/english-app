@@ -6,7 +6,7 @@ import { Placement } from './Placement'
 import { countDue, countNew, Session } from './Session'
 import { Settings } from './Settings'
 import { syncNow, syncReady, today, useStore } from './store'
-import { L, Page } from './ui'
+import { L, Page, Ring } from './ui'
 
 type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'essay' } | { name: 'settings' } | { name: 'placement' }
 
@@ -42,43 +42,75 @@ export default function App() {
   })
   const max = Math.max(1, ...week.map((d) => d.n))
 
+  const total = WORDS.length + SENTENCES.length
+  const activeDays = week.filter((d) => d.n > 0).length
+  const hour = new Date().getHours()
+  const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
+  const TILES = [
+    { m: 5, icon: '☕', vi: 'Nhanh', en: 'Quick', cls: 't1' },
+    { m: 15, icon: '🎯', vi: 'Vừa đủ', en: 'Focused', cls: 't2' },
+    { m: 30, icon: '🚀', vi: 'Học sâu', en: 'Deep', cls: 't3' },
+  ]
+
   return (
-    <Page title="English App">
-      <section className="card">
-        <div className="stats">
-          <div><b>{due}</b><L vi="đến hạn ôn" en="due" /></div>
-          <div><b>{fresh}</b><L vi="chưa học" en="new" /></div>
-          <div><b>{learned}</b><L vi="đã học" en="learned" /></div>
+    <main className="page">
+      <section className="hero">
+        <div>
+          <p className="hello">{hello[0]} 👋</p>
+          <p className="hello-en">{hello[1]}</p>
+          <span className="badge">Trình độ {s.level}</span>
+          <p className="hero-note">
+            {due > 0 ? `${due} thẻ đang chờ bạn ôn` : learned > 0 ? 'Không có thẻ đến hạn — học từ mới nhé' : 'Bắt đầu phiên học đầu tiên nào!'}
+          </p>
         </div>
-        <p className="muted small">
-          {due > 30 ? 'Thẻ dồn lại cũng không sao: mỗi phiên chỉ lấy vừa đủ thời gian bạn chọn, thẻ quá hạn lâu nhất được ôn trước.'
-            : 'Chọn thời lượng hôm nay. Nghỉ vài ngày cũng không bị phạt. · Pick how long you have today.'}
-        </p>
-        <div className="grades">
-          {[5, 15, 30].map((m) => (
-            <button key={m} className={m === 15 ? 'primary' : ''} onClick={() => setView({ name: 'session', minutes: m })}>
-              <L vi={`${m} phút`} en={`${m} min`} />
-            </button>
-          ))}
-        </div>
+        <Ring value={learned / total}>
+          <b>{Math.round((learned / total) * 100)}%</b>
+          <small>đã học</small>
+        </Ring>
       </section>
 
-      <button className="card row" onClick={() => setView({ name: 'essay' })}>
-        <b><L vi="Luyện viết bài" en="Writing practice" /></b>
-        <span className="muted small">Đoạn văn, email và IELTS Task 2 — có nút nhờ Claude chấm.</span>
+      <div className="stats">
+        <div className="chip c1"><b>{due}</b><L vi="đến hạn ôn" en="due" /></div>
+        <div className="chip c2"><b>{fresh}</b><L vi="chưa học" en="new" /></div>
+        <div className="chip c3"><b>{learned}</b><L vi="đã học" en="learned" /></div>
+      </div>
+
+      <h2 className="sec"><L vi="Hôm nay bạn có bao lâu?" en="How long do you have today?" /></h2>
+      <div className="tiles">
+        {TILES.map((t) => (
+          <button key={t.m} className={`tile ${t.cls}`} onClick={() => setView({ name: 'session', minutes: t.m })}>
+            <span className="icon">{t.icon}</span>
+            <b>{t.m} phút</b>
+            <L vi={t.vi} en={t.en} />
+          </button>
+        ))}
+      </div>
+      <p className="muted small center">
+        {due > 30 ? 'Thẻ dồn lại cũng không sao: mỗi phiên chỉ lấy vừa đủ thời gian bạn chọn.' : 'Nghỉ vài ngày cũng không bị phạt — thẻ sẽ chờ bạn.'}
+      </p>
+
+      <button className="card row feature" onClick={() => setView({ name: 'essay' })}>
+        <span className="icon">✍️</span>
+        <span>
+          <b><L vi="Luyện viết bài" en="Writing practice" /></b>
+          <span className="muted small">Đoạn văn, email và IELTS Task 2 — có nút nhờ Claude chấm.</span>
+        </span>
+        <span className="chev">›</span>
       </button>
 
       <section className="card">
         <h2><L vi="7 ngày qua" en="Last 7 days" /></h2>
         <div className="week">
           {week.map((d, i) => (
-            <div key={i}><span className="n">{d.n || ''}</span><i style={{ height: `${(d.n / max) * 48 + 2}px` }} /><span>{d.label}</span></div>
+            <div key={i} className={d.n ? 'on' : ''}><span className="n">{d.n || ''}</span><i style={{ height: `${(d.n / max) * 56 + 6}px` }} /><span>{d.label}</span></div>
           ))}
         </div>
-        <p className="muted small">Trình độ {s.level} · Kho hiện có {WORDS.length} từ và {SENTENCES.length} câu viết.</p>
+        <p className="muted small">
+          {activeDays > 0 ? `Bạn đã học ${activeDays}/7 ngày gần đây. ` : ''}Kho hiện có {WORDS.length} từ và {SENTENCES.length} câu viết.
+        </p>
       </section>
 
-      <button className="ghost line" onClick={() => setView({ name: 'settings' })}><L vi="Cài đặt, đồng bộ, sao lưu" en="Settings, sync, backup" /></button>
-    </Page>
+      <button className="ghost line" onClick={() => setView({ name: 'settings' })}>⚙️ <L vi="Cài đặt, đồng bộ, sao lưu" en="Settings, sync, backup" /></button>
+    </main>
   )
 }

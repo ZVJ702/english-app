@@ -4,7 +4,7 @@ import { WORDS, type Level } from './data/vocab'
 import { SENTENCES } from './data/writing'
 import { dueTime, getState, grade } from './store'
 import { copy, missingWords, sameText, speak, untilText } from './util'
-import { L, Page } from './ui'
+import { Confetti, L, Page } from './ui'
 
 const WORD = new Map(WORDS.map((w) => [w.id, w]))
 const SENT = new Map(SENTENCES.map((s) => [s.id, s]))
@@ -58,6 +58,9 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   const [last, setLast] = useState('')
   const [finished, setFinished] = useState(initial.length === 0)
   const [copied, setCopied] = useState(false)
+  const [combo, setCombo] = useState(0)
+  const [right, setRight] = useState(0)
+  const [fresh, setFresh] = useState(0)
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
 
   const item = queue[0]
@@ -76,6 +79,9 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   function rate(g: Grade) {
     const due = grade(item.id, g)
     setDone((n) => n + 1)
+    const good = correct || g >= Rating.Good
+    setCombo((c) => (good ? c + 1 : 0))
+    if (good) setRight((n) => n + 1)
     setLast(`Thẻ vừa rồi sẽ quay lại sau ${untilText(due)}`)
     // Thẻ đang học (hẹn lại trong vòng 10 phút) được hỏi lại ngay trong phiên.
     const soon = due.getTime() - Date.now() < 10 * 60_000
@@ -85,9 +91,15 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   if (finished || !item) {
     return (
       <Page title={<L vi="Xong phiên học" en="Session complete" />}>
-        <section className="card center">
-          <p className="big">{done}</p>
-          <p><L vi="lượt ôn trong phiên này" en="reviews this session" /></p>
+        {done > 0 && <Confetti />}
+        <section className="card center finish">
+          <div className="trophy">{done > 0 ? '🎉' : '🌙'}</div>
+          <h2>{done > 0 ? <L vi="Làm tốt lắm!" en="Well done!" /> : <L vi="Hôm nay nhẹ nhàng" en="All caught up" />}</h2>
+          <div className="stats">
+            <div className="chip c1"><b>{done}</b><L vi="lượt ôn" en="reviews" /></div>
+            <div className="chip c2"><b>{done ? Math.round((right / done) * 100) : 0}%</b><L vi="chính xác" en="accuracy" /></div>
+            <div className="chip c3"><b>{fresh}</b><L vi="từ mới" en="new words" /></div>
+          </div>
           <p className="muted">
             {done === 0
               ? 'Chưa có thẻ nào đến hạn và bạn đã học hết thẻ mới. · Nothing is due right now.'
@@ -111,23 +123,26 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   return (
     <Page title={<L vi={`Phiên ${minutes} phút`} en={`${minutes}-minute session`} />} onBack={onExit}>
       <div className="bar"><i style={{ width: `${elapsed * 100}%` }} /></div>
-      <p className="muted small">{last || `Còn ${queue.length} thẻ trong hàng đợi · ${queue.length} cards queued`}</p>
+      <p className="muted small status">
+        <span>{last || `Còn ${queue.length} thẻ trong hàng đợi · ${queue.length} cards queued`}</span>
+        {combo >= 2 && <span className="combo" key={combo}>🔥 {combo} đúng liên tiếp</span>}
+      </p>
 
       {word && item.phase === 'intro' && (
-        <section className="card">
-          <span className="tag">Từ mới · New word · {word.level}</span>
+        <section className="card slide intro" key={`${item.id}-${item.phase}-${done}`}>
+          <span className="tag new">✨ Từ mới · New word · {word.level}</span>
           <h2 className="word">{word.word} <button className="ghost" onClick={() => speak(word.word)} aria-label="Nghe · Listen">🔊</button></h2>
           <p><em>{word.pos}</em> — {word.vi}</p>
           <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>
-          <button className="primary" onClick={() => advance({ id: item.id, phase: 'test' })}>
+          <button className="primary" onClick={() => { setFresh((n) => n + 1); advance({ id: item.id, phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
         </section>
       )}
 
       {word && item.phase === 'test' && (
-        <section className="card">
-          <span className="tag">Từ vựng · Vocabulary · {word.level}</span>
+        <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
+          <span className="tag vocab">📚 Từ vựng · Vocabulary · {word.level}</span>
           <p className="prompt">{word.vi} <em>({word.pos})</em></p>
           <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
@@ -139,8 +154,8 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       )}
 
       {sent && (
-        <section className="card">
-          <span className="tag">Viết câu · Sentence writing · {sent.level}</span>
+        <section className="card slide" key={`${item.id}-${item.phase}-${done}`}>
+          <span className="tag write">✍️ Viết câu · Sentence writing · {sent.level}</span>
           <p className="muted small">{sent.point}</p>
           <p className="prompt">{sent.vi}</p>
           <form onSubmit={(e) => { e.preventDefault(); if (!checked) setChecked(true) }}>
@@ -153,7 +168,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       )}
 
       {checked && (
-        <section className={`card result ${correct ? 'ok' : word ? 'bad' : ''}`}>
+        <section className={`card result ${correct ? 'ok bounce' : word ? 'bad shake' : 'neutral slide'}`}>
           <p className="verdict">{correct ? '✓ Chính xác · Correct' : word ? '✗ Chưa đúng · Not quite' : 'So với đáp án mẫu · Compare with the model answer'}</p>
           {!correct && (
             <p className="answer">
