@@ -722,17 +722,373 @@ s: I like the job, but the salary is low.|Tôi thích công việc đó, nhưng 
 s: I was late because of the traffic.|Tôi đến muộn vì kẹt xe.
 s: It was cold, so I closed the window.|Trời lạnh nên tôi đóng cửa sổ.
 s: She is smart and hard-working.|Cô ấy thông minh và chăm chỉ.
+# subjpron|A1|Đại từ nhân xưng và tính từ sở hữu|Subject pronouns and possessive adjectives|I – my  ·  you – your  ·  he – his  ·  she – her  ·  it – its  ·  we – our  ·  they – their
+> Đại từ nhân xưng làm chủ ngữ của câu: I, you, he, she, it, we, they.
+> Tính từ sở hữu đứng trước danh từ để chỉ của ai: my book, her car, their house.
+> its (của nó) không có dấu nháy; it's là viết tắt của it is.
+= Tiếng Việt chọn "anh, chị, em, cô, chú" theo tuổi tác và quan hệ; tiếng Anh chỉ có một từ you cho mọi người, và phân biệt he (nam) với she (nữ).
+! He name is Nam. → His name is Nam. — Trước danh từ dùng tính từ sở hữu.
+! She is my brother. → He is my brother. — Nam giới dùng he.
+p: Phân biệt he /hiː/ và she /ʃiː/: âm /ʃ/ tròn môi, khác với âm /s/. your đọc là /jʊr/, their và there đọc giống nhau /ðer/.|he, she, his, her, their
+e: This is my sister. Her name is Lan.|Đây là chị tôi. Chị ấy tên là Lan.
+e: They love their children.|Họ yêu con của họ.
+q: ___ is my friend. His name is Tom.|She;He;His;Him|1|Tom là nam → He.
+q: This is Mary and this is ___ husband.|his;she;her;hers|2|Của Mary (nữ) → her.
+q: We live in Hanoi. ___ house is small.|We;Us;Our;Ours|2|Trước danh từ house → Our.
+q: The dog is eating ___ food.|it;its;it's;his is|1|Của nó → its, không có dấu nháy.
+t: I have a brother. ___ name is Minh.|His|Của anh ấy → His.
+t: ___ are students. (chúng tôi)|We|Chủ ngữ → We.
+t: Is this ___ phone? (của bạn)|your|Trước danh từ → your.
+s: What is your name?|Bạn tên là gì?
+s: My name is Nam.|Tôi tên là Nam.
+s: This is her bag.|Đây là túi của cô ấy.
+s: They are my friends.|Họ là bạn của tôi.
+# plurals|A1|Danh từ số ít và số nhiều|Singular and plural nouns|danh từ + -s / -es  ·  bất quy tắc: man → men
+> Phần lớn danh từ thêm -s: book → books. Thêm -es sau s, x, ch, sh: box → boxes, watch → watches.
+> Tận cùng bằng phụ âm + y: đổi y thành ies: city → cities.
+> Bất quy tắc: man → men, woman → women, child → children, person → people, foot → feet, tooth → teeth.
+= Tiếng Việt dùng "những", "các" hoặc số đếm và không đổi danh từ ("hai quyển sách"); tiếng Anh bắt buộc đổi danh từ sang số nhiều.
+! I have two brother. → I have two brothers. — Sau số từ hai trở lên phải dùng số nhiều.
+! There are many childs. → There are many children. — child là danh từ bất quy tắc.
+p: Đuôi -s số nhiều có ba cách đọc như đuôi -s của động từ: /s/, /z/, /ɪz/. Đây là âm cuối người Việt hay bỏ nhất khi nói.|books, cars, boxes
+e: She has three children.|Cô ấy có ba người con.
+e: There are two boxes on the table.|Có hai cái hộp trên bàn.
+q: I have two ___.|sister;sisters;sisteres;sister's|1|Số nhiều thêm -s.
+q: There are five ___ in the room.|person;persons;people;peoples|2|Số nhiều của person là people.
+q: She bought three ___.|dress;dresss;dresses;dressies|2|Tận cùng bằng s thêm -es.
+q: Vietnam has many big ___.|city;citys;cityes;cities|3|Phụ âm + y → ies.
+t: Two ___ (man) are waiting outside.|men|man → men.
+t: I need two ___ (box).|boxes|Tận cùng bằng x thêm -es.
+t: How many ___ (child) do you have?|children|child → children.
+s: I have two brothers.|Tôi có hai anh em trai.
+s: There are many people here.|Ở đây có nhiều người.
+s: She has three cats.|Cô ấy có ba con mèo.
+s: The children are at school.|Bọn trẻ đang ở trường.
+# demonstr|A1|This, that, these, those|This, that, these, those|this/these (gần)  ·  that/those (xa)
+> this và these chỉ vật ở gần người nói; that và those chỉ vật ở xa.
+> this và that đi với danh từ số ít; these và those đi với danh từ số nhiều.
+> Dùng this để giới thiệu người: This is my wife. Khi nghe điện thoại: This is Nam speaking.
+= Tiếng Việt nói "cái này", "những cái này" bằng cách thêm từ; tiếng Anh đổi hẳn sang một từ khác cho số nhiều: this → these, that → those.
+! This books are mine. → These books are mine. — Danh từ số nhiều dùng these.
+! That are my friends. → Those are my friends. — Số nhiều ở xa dùng those.
+p: this có nguyên âm ngắn /ɪ/ và kết thúc bằng /s/; these có nguyên âm dài /iː/ và kết thúc bằng /z/. Âm đầu /ð/ đặt lưỡi giữa hai hàm răng.|this, these, that, those
+e: This is my desk.|Đây là bàn làm việc của tôi.
+e: Those buildings are very tall.|Những tòa nhà kia rất cao.
+q: ___ is my phone here.|These;This;Those;They|1|Một vật ở gần → This.
+q: Look at ___ birds over there.|this;that;these;those|3|Nhiều vật ở xa → those.
+q: Are ___ your keys in my hand?|this;that;these;those|2|Nhiều vật ở gần → these.
+q: Who is ___ man across the street?|this;that;these;those|1|Một người ở xa → that.
+t: ___ shoes here are too small. (gần)|These|Số nhiều, ở gần.
+t: What is ___ over there? (xa, một vật)|that|Số ít, ở xa.
+t: ___ is my friend Hoa. (giới thiệu)|This|Giới thiệu người dùng This.
+s: This is my office.|Đây là văn phòng của tôi.
+s: What is that?|Kia là cái gì?
+s: These are my colleagues.|Đây là các đồng nghiệp của tôi.
+s: How much are those?|Những cái kia giá bao nhiêu?
+# thereis|A1|There is, there are|There is, there are|There is + số ít  ·  There are + số nhiều
+> Dùng để nói có cái gì ở đâu đó. There is đi với danh từ số ít hoặc không đếm được; there are đi với số nhiều.
+> Phủ định: There isn't, There aren't. Câu hỏi: Is there ...? Are there ...?
+> Sau khi đã giới thiệu bằng there is, lần sau dùng it hoặc they: There is a bank. It is near the station.
+= Tiếng Việt dùng "có" cho cả sở hữu lẫn tồn tại; tiếng Anh tách hai ý: have (tôi có) và there is (ở đó có).
+! Have a bank near here. → There is a bank near here. — Nói về sự tồn tại dùng there is, không dùng have.
+! There is two chairs. → There are two chairs. — Danh từ số nhiều dùng there are.
+p: there is thường rút gọn thành there's /ðerz/; there are đọc nhẹ /ðərə/ và nối liền với từ sau.|there's a bank, there are two, is there
+e: There is a café on the corner.|Có một quán cà phê ở góc đường.
+e: Are there any questions?|Có câu hỏi nào không?
+q: ___ a supermarket near my house.|There are;There is;It has;Have|1|Một siêu thị → There is.
+q: ___ three people in the meeting room.|There is;There are;They are;Have|1|Số nhiều → There are.
+q: ___ any milk in the fridge?|Are there;Is there;Have there;Does there|1|milk không đếm được → Is there.
+q: There ___ any chairs in this room.|isn't;aren't;don't;not|1|Số nhiều phủ định → aren't.
+t: There ___ a problem with my computer.|is|Số ít.
+t: ___ there many students in your class?|Are|Số nhiều → Are there.
+t: There ___ (not) any water left.|is not / isn't|Không đếm được → isn't.
+s: There is a bank near here.|Gần đây có một ngân hàng.
+s: Is there a toilet here?|Ở đây có nhà vệ sinh không?
+s: There are two meetings today.|Hôm nay có hai cuộc họp.
+s: There isn't much time.|Không còn nhiều thời gian.
+# havegot|A1|Have và have got|Have and have got|S + have/has (got) + danh từ
+> have và have got đều nghĩa là "có" (sở hữu). have got phổ biến trong tiếng Anh-Anh; tiếng Anh-Mỹ thường chỉ dùng have.
+> he/she/it dùng has. Phủ định: don't have / doesn't have (hoặc haven't got / hasn't got).
+> Câu hỏi: Do you have ...? Does she have ...? (hoặc Have you got ...?)
+= "Có" trong tiếng Việt không đổi theo chủ ngữ; tiếng Anh đổi have thành has với he, she, it.
+! She have a car. → She has a car. — he/she/it đi với has.
+! Do she has a car? → Does she have a car? — Sau does dùng have.
+p: have đọc /hæv/ với âm /æ/ mở miệng rộng; has đọc /hæz/ kết thúc bằng /z/. Đừng đọc have thành "hép".|have, has, I've got
+e: I have two sisters.|Tôi có hai chị em gái.
+e: Does he have a laptop?|Anh ấy có máy tính xách tay không?
+q: My brother ___ a new job.|have;has;having;is have|1|he → has.
+q: ___ you have any brothers?|Does;Are;Do;Have|2|Câu hỏi với you → Do.
+q: She ___ have a car.|don't;doesn't;isn't;hasn't|1|she → doesn't.
+q: We ___ a meeting at three.|has;have;having;are have|1|we → have.
+t: He ___ (have) a big house.|has|he → has.
+t: I ___ (not / have) any money.|do not have / don't have|Phủ định với I.
+t: ___ she have a phone?|Does|Câu hỏi với she.
+s: I have a question.|Tôi có một câu hỏi.
+s: Do you have a pen?|Bạn có bút không?
+s: She has a meeting now.|Cô ấy đang có cuộc họp.
+s: We don't have time.|Chúng ta không có thời gian.
+# pressimple|A1|Hiện tại đơn: khẳng định, phủ định, câu hỏi|Present simple: all forms|S + V(s/es)  ·  S + don't/doesn't + V  ·  Do/Does + S + V?
+> Dùng cho thói quen, sự thật và việc lặp lại. Với he/she/it, động từ thêm -s hoặc -es.
+> Phủ định: don't + V (I, you, we, they) và doesn't + V (he, she, it).
+> Câu hỏi: Do/Does + chủ ngữ + V? Trả lời ngắn: Yes, I do. / No, she doesn't.
+= Tiếng Việt thêm "không" để phủ định và "không?" cuối câu để hỏi; tiếng Anh cần trợ động từ do/does cho cả hai.
+! He don't like coffee. → He doesn't like coffee. — he/she/it dùng doesn't.
+! Does she works here? → Does she work here? — Sau does động từ không thêm -s.
+p: do you nói nhanh thành /dəjə/; does đọc /dʌz/, doesn't đọc /ˈdʌznt/. Câu hỏi Yes/No lên giọng ở cuối.|do you, does she, doesn't
+e: I work in an office.|Tôi làm việc ở văn phòng.
+e: Does he speak English?|Anh ấy có nói tiếng Anh không?
+q: She ___ in a bank.|work;works;working;is work|1|she → thêm -s.
+q: ___ you like tea?|Does;Are;Do;Is|2|you → Do.
+q: They ___ live here.|doesn't;don't;aren't;isn't|1|they → don't.
+q: Does he ___ football?|plays;playing;play;played|2|Sau does dùng V nguyên mẫu.
+t: My father ___ (watch) TV every evening.|watches|Tận cùng bằng ch thêm -es.
+t: We ___ (not / work) on Sundays.|do not work / don't work|we → don't.
+t: ___ she live near here?|Does|she → Does.
+s: I work from nine to five.|Tôi làm việc từ chín giờ đến năm giờ.
+s: Do you speak English?|Bạn có nói tiếng Anh không?
+s: She doesn't eat meat.|Cô ấy không ăn thịt.
+s: Where does he work?|Anh ấy làm việc ở đâu?
+# can|A1|Can và can't|Can and can't|S + can / can't + V
+> can diễn tả khả năng (I can swim) và xin phép hoặc nhờ vả (Can I sit here? Can you help me?).
+> can không đổi theo chủ ngữ và theo sau luôn là động từ nguyên mẫu không có to.
+> Phủ định: can't hoặc cannot. Câu hỏi: đảo can lên trước chủ ngữ.
+= "Có thể", "biết", "được" trong tiếng Việt đều có thể dịch là can: biết bơi = can swim, được vào = can come in.
+! I can to drive. → I can drive. — Sau can không có to.
+! She cans cook. → She can cook. — can không thêm -s.
+p: can trong câu khẳng định đọc nhẹ /kən/ và trọng âm rơi vào động từ; can't đọc rõ /kænt/. Nghe nhầm là hiểu ngược nghĩa.|I can swim, I can't swim, Can you help
+e: I can speak a little English.|Tôi nói được một chút tiếng Anh.
+e: Can I use your phone?|Tôi dùng điện thoại của bạn được không?
+q: She ___ play the piano very well.|can;cans;can to;is can|0|can không đổi dạng.
+q: ___ you help me, please?|Do;Can;Are;Does|1|Nhờ vả → Can.
+q: I ___ come tomorrow. I am busy.|can;can't;don't can;am not can|1|Không thể → can't.
+q: Can he ___ a car?|drives;to drive;drive;driving|2|Sau can dùng V nguyên mẫu.
+t: I ___ swim, but I can't dive.|can|Khả năng.
+t: ___ I open the window?|Can|Xin phép.
+t: Sorry, I ___ (not) hear you.|cannot / can't|Phủ định.
+s: Can you help me?|Bạn giúp tôi được không?
+s: I can't find my keys.|Tôi không tìm thấy chìa khóa.
+s: Can I pay by card?|Tôi trả bằng thẻ được không?
+s: She can speak three languages.|Cô ấy nói được ba thứ tiếng.
+# imperative|A1|Câu mệnh lệnh|Imperatives|V + ...  ·  Don't + V + ...  ·  Let's + V
+> Dùng động từ nguyên mẫu, không có chủ ngữ, để hướng dẫn, yêu cầu hoặc chỉ đường: Turn left. Open the door.
+> Phủ định: Don't + V. Thêm please để lịch sự hơn.
+> Let's + V dùng để rủ cùng làm: Let's go. Let's have lunch.
+= Tiếng Việt thêm "đi", "nhé", "đừng"; tiếng Anh dùng thẳng động từ và thêm please để giữ lịch sự.
+! Don't to touch that. → Don't touch that. — Sau don't không có to.
+! Let's to go. → Let's go. — Sau let's là động từ nguyên mẫu.
+p: Câu mệnh lệnh xuống giọng ở cuối. Thêm please và nói nhẹ giọng để không nghe như ra lệnh.|Sit down please, Don't worry, Let's go
+e: Please sit down.|Mời ngồi.
+e: Don't be late.|Đừng đến muộn.
+q: ___ the door, please.|Closing;Close;To close;Closes|1|Câu mệnh lệnh dùng V nguyên mẫu.
+q: ___ worry. Everything is fine.|Not;Doesn't;Don't;No|2|Phủ định: Don't + V.
+q: ___ have lunch together.|Let;Let's;Lets to;Let's to|1|Rủ cùng làm → Let's + V.
+q: Please ___ quiet in the library.|is;are;be;being|2|Mệnh lệnh với be → Be quiet.
+t: ___ (not / forget) your passport.|Do not forget / Don't forget|Don't + V.
+t: ___ left at the traffic lights. (turn)|Turn|V nguyên mẫu.
+t: ___ go for a coffee. (rủ)|Let's|Let's + V.
+s: Please wait here.|Xin hãy đợi ở đây.
+s: Don't worry about it.|Đừng lo về chuyện đó.
+s: Let's start the meeting.|Chúng ta bắt đầu cuộc họp nhé.
+s: Turn right at the corner.|Rẽ phải ở góc đường.
+# liking|A1|Like, love, hate + V-ing|Like, love, hate + -ing|S + like / love / hate + V-ing
+> Sau like, love, enjoy, hate, don't like thường dùng V-ing để nói về sở thích.
+> Cách thêm -ing: bỏ e cuối (dance → dancing), gấp đôi phụ âm cuối với từ ngắn (swim → swimming).
+> would like + to V dùng để nói muốn làm gì ngay lúc này, lịch sự hơn want.
+= Tiếng Việt nói "thích đọc sách" với động từ giữ nguyên; tiếng Anh phải đổi sang reading.
+! I like read books. → I like reading books. — Sau like dùng V-ing.
+! I would like going. → I would like to go. — would like + to V.
+p: Đuôi -ing đọc là /ɪŋ/, âm mũi phát ra ở cuối lưỡi, không bật âm /g/. would like nói nhanh thành I'd like.|reading, swimming, I'd like
+e: I love cooking.|Tôi rất thích nấu ăn.
+e: She doesn't like getting up early.|Cô ấy không thích dậy sớm.
+q: I like ___ to music.|listen;listening;listens;to listening|1|like + V-ing.
+q: He hates ___ in traffic.|drive;drives;driving;drove|2|hate + V-ing.
+q: I would like ___ a coffee, please.|having;have;to have;has|2|would like + to V.
+q: Do you enjoy ___?|swim;swiming;swimming;to swimming|2|swim gấp đôi m → swimming.
+t: She loves ___ (dance).|dancing|Bỏ e rồi thêm -ing.
+t: I don't like ___ (wait).|waiting|like + V-ing.
+t: We would like ___ (order) now.|to order|would like + to V.
+s: I like reading books.|Tôi thích đọc sách.
+s: Do you like cooking?|Bạn có thích nấu ăn không?
+s: He loves playing football.|Anh ấy rất thích chơi bóng đá.
+s: I would like to book a table.|Tôi muốn đặt một bàn.
+# placeprep|A1|Giới từ chỉ vị trí|Prepositions of place|in, on, under, next to, between, behind, in front of, opposite
+> in: bên trong; on: trên bề mặt; under: bên dưới; next to: bên cạnh; between: ở giữa hai thứ.
+> behind: phía sau; in front of: phía trước; opposite: đối diện; near: gần.
+> Dùng với to be để nói vị trí: The bank is next to the post office.
+= Tiếng Việt nói "ở trên bàn", "ở trong túi"; tiếng Anh không cần từ "ở", chỉ dùng to be và giới từ: It is on the table.
+! The bank is next the hotel. → The bank is next to the hotel. — next luôn đi với to.
+! He is in front the door. → He is in front of the door. — in front luôn đi với of.
+p: Các cụm giới từ được đọc liền thành một khối: next to /ˈnekstə/, in front of /ɪnˈfrʌntəv/.|next to, in front of, between
+e: The keys are in my bag.|Chìa khóa ở trong túi của tôi.
+e: The pharmacy is opposite the bank.|Hiệu thuốc ở đối diện ngân hàng.
+q: The cat is ___ the table. It is sleeping on the floor.|on;in;under;between|2|Nằm trên sàn, bên dưới bàn → under.
+q: The café is ___ the bank and the hotel.|between;next;under;in|0|Ở giữa hai nơi → between.
+q: There is a car park ___ the building.|behind;between;in;on top|0|Phía sau → behind.
+q: My office is ___ the station.|next;near;front;between of|1|Gần → near.
+t: The book is ___ the table. (trên)|on|Trên bề mặt.
+t: She is standing ___ to me. (bên cạnh)|next|next to.
+t: Please wait in ___ of the building. (phía trước)|front|in front of.
+s: The bank is next to the hotel.|Ngân hàng ở cạnh khách sạn.
+s: My phone is on the desk.|Điện thoại của tôi ở trên bàn.
+s: The toilet is behind the stairs.|Nhà vệ sinh ở phía sau cầu thang.
+s: I'm in front of the building.|Tôi đang ở trước tòa nhà.
+# waswere|A1|Quá khứ của to be: was, were|Past of "to be": was, were|I/he/she/it was  ·  you/we/they were
+> was và were là dạng quá khứ của am, is, are, dùng để nói về trạng thái hoặc vị trí trong quá khứ.
+> Phủ định: wasn't, weren't. Câu hỏi: Was he ...? Were you ...?
+> was born dùng để nói nơi và năm sinh: I was born in 1995.
+= Tiếng Việt nói "Hôm qua tôi mệt" không cần động từ; tiếng Anh cần was: I was tired yesterday.
+! I am tired yesterday. → I was tired yesterday. — Quá khứ dùng was.
+! They was at home. → They were at home. — they đi với were.
+p: was và were thường đọc nhẹ /wəz/ và /wər/ khi ở giữa câu; đọc rõ khi đứng cuối câu trả lời ngắn: Yes, I was.|I was tired, they were late, Yes I was
+e: I was at home last night.|Tối qua tôi ở nhà.
+e: Were you busy yesterday?|Hôm qua bạn có bận không?
+q: We ___ in Da Nang last week.|was;were;are;be|1|we → were.
+q: She ___ very tired after work.|were;was;is being;be|1|she → was.
+q: ___ you at the meeting yesterday?|Was;Were;Did;Are|1|you → Were.
+q: I ___ born in 1998.|am;were;was;did|2|I was born.
+t: The weather ___ (be) nice yesterday.|was|Số ít → was.
+t: They ___ (not / be) happy with the result.|were not / weren't|they → weren't.
+t: Where ___ you last night?|were|you → were.
+s: I was very busy yesterday.|Hôm qua tôi rất bận.
+s: Where were you last night?|Tối qua bạn ở đâu?
+s: She wasn't at work today.|Hôm nay cô ấy không đi làm.
+s: The food was delicious.|Đồ ăn rất ngon.
+# perfcont|B1|Hiện tại hoàn thành tiếp diễn|Present perfect continuous|S + have/has been + V-ing
+> Nhấn mạnh hành động kéo dài từ quá khứ đến hiện tại và vẫn còn tiếp diễn, hoặc vừa dừng và còn để lại dấu vết.
+> Thường đi với for, since, how long, all day, recently.
+> Động từ trạng thái (know, like, have với nghĩa sở hữu) không dùng dạng này mà dùng hiện tại hoàn thành: I have known her for years.
+= Tiếng Việt nói "đã làm ... được ba tiếng rồi" và không phân biệt kết quả với quá trình; tiếng Anh dùng dạng tiếp diễn khi muốn nhấn mạnh quá trình và thời gian.
+! I am working here for five years. → I have been working here for five years. — Kéo dài từ quá khứ đến nay dùng have been + V-ing.
+! I have been knowing him for years. → I have known him for years. — know không dùng dạng tiếp diễn.
+p: have been nói nhanh thành /əvbɪn/ và rút gọn: I've been, she's been. Trọng âm rơi vào động từ V-ing.|I've been working, she's been waiting, how long have you been
+e: I have been waiting for an hour.|Tôi đã đợi một tiếng rồi.
+e: It has been raining all day.|Trời mưa suốt cả ngày.
+q: She ___ English for three years.|is learning;has been learning;learns;was learning|1|Kéo dài đến hiện tại với for → have been + V-ing.
+q: How long ___ you been working here?|are;do;have;did|2|How long + have + S + been + V-ing.
+q: Your eyes are red. ___ you been crying?|Are;Did;Have;Do|2|Dấu vết của việc vừa xảy ra → Have you been crying.
+q: I ___ this book for weeks, and I still haven't finished it.|have been reading;am read;read;have been read|0|Quá trình còn tiếp diễn.
+t: We ___ (wait) since nine o'clock.|have been waiting|have been + V-ing.
+t: He ___ (work) on this report all morning.|has been working|he → has been + V-ing.
+t: I ___ (know) her for ten years.|have known|know là động từ trạng thái → hiện tại hoàn thành.
+s: I've been working here for two years.|Tôi đã làm ở đây được hai năm.
+s: How long have you been waiting?|Bạn đã đợi bao lâu rồi?
+s: She has been studying all day.|Cô ấy đã học cả ngày.
+s: We've been looking for a new office.|Chúng tôi đang tìm một văn phòng mới.
+# pastperfect|B1|Quá khứ hoàn thành|Past perfect|S + had + V3
+> Dùng để nói một việc xảy ra trước một việc khác trong quá khứ. Việc xảy ra trước dùng had + V3; việc xảy ra sau dùng quá khứ đơn.
+> Thường đi với when, before, after, by the time, already, just.
+> Nếu trình tự đã rõ nhờ before hoặc after thì có thể dùng quá khứ đơn cho cả hai.
+= Tiếng Việt dùng "đã ... rồi" hoặc "trước đó"; tiếng Anh dùng had + V3 để đánh dấu việc nào xảy ra trước.
+! When I arrived, the train left. → When I arrived, the train had left. — Tàu đi trước khi tôi đến nên dùng had left.
+! I had went there before. → I had gone there before. — Sau had dùng V3.
+p: had thường rút gọn thành 'd và đọc rất nhẹ: I'd finished, she'd left. Trọng âm rơi vào V3.|I'd finished, she'd left, they'd already gone
+e: When we arrived, the meeting had already started.|Khi chúng tôi đến, cuộc họp đã bắt đầu rồi.
+e: She had never flown before that trip.|Trước chuyến đi đó cô ấy chưa bao giờ đi máy bay.
+q: When I got to the station, the train ___.|left;has left;had left;leaves|2|Việc xảy ra trước → had + V3.
+q: He was tired because he ___ well.|didn't sleep;hadn't slept;hasn't slept;doesn't sleep|1|Nguyên nhân xảy ra trước → hadn't slept.
+q: By the time she called, I ___ dinner.|already finished;have already finished;had already finished;finish|2|by the time + quá khứ → had + V3.
+q: I recognised him because we ___ before.|met;had met;have met;meet|1|Gặp trước lúc nhận ra → had met.
+t: After they ___ (eat), they went for a walk.|had eaten|Việc xảy ra trước.
+t: The film ___ (already / start) when we arrived.|had already started|had + already + V3.
+t: I didn't have my wallet. I ___ (leave) it at home.|had left|Việc xảy ra trước.
+s: The meeting had already started when I arrived.|Cuộc họp đã bắt đầu khi tôi đến.
+s: I had never seen it before.|Trước đó tôi chưa từng thấy nó.
+s: She had left before I called.|Cô ấy đã đi trước khi tôi gọi.
+s: We had finished the report by Friday.|Chúng tôi đã hoàn thành báo cáo trước thứ Sáu.
+# tagq|B1|Câu hỏi đuôi|Question tags|Câu khẳng định, + đuôi phủ định?  ·  Câu phủ định, + đuôi khẳng định?
+> Câu hỏi đuôi dùng để xác nhận thông tin hoặc mở lời trò chuyện. Vế trước khẳng định thì đuôi phủ định, và ngược lại.
+> Đuôi dùng cùng trợ động từ với vế trước; nếu là động từ thường thì mượn do, does, did.
+> Trường hợp đặc biệt: I am ..., aren't I? Let's ..., shall we?
+= Tiếng Việt chỉ cần thêm "phải không?", "nhỉ?" cho mọi câu; tiếng Anh phải chọn đuôi khớp với trợ động từ và thì của câu.
+! You are a student, isn't it? → You are a student, aren't you? — Đuôi phải khớp với chủ ngữ và động từ của vế trước.
+! She works here, isn't she? → She works here, doesn't she? — Động từ thường mượn does.
+p: Xuống giọng ở đuôi khi bạn khá chắc và chỉ muốn người nghe đồng tình; lên giọng khi bạn thật sự không chắc và muốn hỏi.|isn't it, don't you, aren't they
+e: It's a nice day, isn't it?|Hôm nay trời đẹp nhỉ?
+e: You don't work here, do you?|Bạn không làm ở đây, phải không?
+q: You are from Vietnam, ___?|isn't it;aren't you;don't you;are you|1|are → aren't you.
+q: She can speak French, ___?|can she;doesn't she;can't she;isn't she|2|can → can't she.
+q: They didn't call, ___?|didn't they;did they;do they;were they|1|Vế trước phủ định → đuôi khẳng định did they.
+q: He works in finance, ___?|isn't he;doesn't he;does he;works he|1|Động từ thường hiện tại → doesn't he.
+t: It's cold today, ___ it?|isn't|is → isn't.
+t: You haven't finished, ___ you?|have|Phủ định → đuôi khẳng định.
+t: Let's take a break, ___ we?|shall|Let's → shall we.
+s: It's a nice day, isn't it?|Hôm nay trời đẹp nhỉ?
+s: You work here, don't you?|Bạn làm ở đây, phải không?
+s: She isn't coming, is she?|Cô ấy không đến, phải không?
+s: We've met before, haven't we?|Chúng ta đã gặp nhau rồi, phải không?
+# indirectq|B1|Câu hỏi gián tiếp|Indirect questions|Could you tell me + từ hỏi + S + V?  ·  Do you know if + S + V?
+> Câu hỏi gián tiếp lịch sự hơn câu hỏi trực tiếp, mở đầu bằng Could you tell me, Do you know, I'd like to know, I wonder.
+> Sau cụm mở đầu, dùng trật tự của câu khẳng định: không đảo trợ động từ, không dùng do/does/did.
+> Câu hỏi Yes/No chuyển thành if hoặc whether.
+= Tiếng Việt thêm "cho tôi hỏi", "không biết" mà giữ nguyên câu hỏi; tiếng Anh phải đổi lại trật tự từ sau cụm mở đầu.
+! Could you tell me where is the station? → Could you tell me where the station is? — Không đảo động từ trong câu hỏi gián tiếp.
+! Do you know what time does it start? → Do you know what time it starts? — Không dùng does.
+p: Câu hỏi gián tiếp mở đầu bằng Could you, Do you lên giọng ở cuối; mở đầu bằng I wonder, I'd like to know thì xuống giọng.|Could you tell me, Do you know, I wonder if
+e: Could you tell me where the bank is?|Bạn cho tôi hỏi ngân hàng ở đâu?
+e: Do you know if the shop is open?|Bạn có biết cửa hàng có mở không?
+q: Could you tell me where ___?|is the toilet;the toilet is;does the toilet;the toilet does|1|Trật tự khẳng định: the toilet is.
+q: Do you know what time ___?|does the meeting start;the meeting starts;starts the meeting;the meeting start|1|Không dùng does; động từ thêm -s.
+q: I'd like to know ___ breakfast is included.|what;that;if;does|2|Câu hỏi Yes/No → if.
+q: Can you tell me how much ___?|does this cost;this costs;costs this;is this cost|1|Trật tự khẳng định.
+t: Do you know where she ___ (live)?|lives|Không dùng does, động từ thêm -s.
+t: Could you tell me ___ the train has left? (có ... không)|if / whether|Câu hỏi Yes/No.
+t: I wonder what time it ___ (be).|is|Trật tự khẳng định.
+s: Could you tell me where the station is?|Bạn cho tôi hỏi nhà ga ở đâu?
+s: Do you know what time it opens?|Bạn có biết mấy giờ nó mở cửa không?
+s: I'd like to know how much it costs.|Tôi muốn biết nó giá bao nhiêu.
+s: Do you know if he is in the office?|Bạn có biết anh ấy có ở văn phòng không?
+# possibility|B1|May, might, could chỉ khả năng|May, might, could for possibility|S + may / might / could + V
+> may, might, could diễn tả điều có thể xảy ra nhưng không chắc. might cho thấy khả năng thấp hơn may một chút.
+> Phủ định: may not, might not (có thể không). Không dùng couldn't với nghĩa này.
+> must diễn tả suy đoán gần như chắc chắn; can't diễn tả điều chắc chắn không đúng.
+= Tiếng Việt dùng "có lẽ", "có thể", "chắc là" đứng đầu câu; tiếng Anh đặt động từ khuyết thiếu ngay trước động từ chính.
+! It may rains tomorrow. → It may rain tomorrow. — Sau may là động từ nguyên mẫu, không thêm -s.
+! Maybe he might come. → He might come. — Không dùng maybe và might cùng lúc.
+p: might đọc /maɪt/ và could đọc /kʊd/, trong đó gh và l đều câm. Các từ này được đọc nhẹ, trọng âm rơi vào động từ chính.|might be, could be, may not
+e: It might rain this afternoon.|Chiều nay có thể mưa.
+e: She may not come to the meeting.|Có thể cô ấy sẽ không đến cuộc họp.
+q: Take an umbrella. It ___ rain later.|must;might;can't;should to|1|Có thể xảy ra, không chắc → might.
+q: He isn't answering. He ___ be in a meeting.|could;can't;mustn't;could to|0|Một khả năng → could.
+q: Prices ___ rise next year, but nobody is sure.|must;may;can't;will to|1|Không chắc → may.
+q: She ___ be at home. Her car is not there.|might;may not;must;could to|1|Có thể không → may not.
+t: I'm not sure, but I ___ be late tomorrow.|may / might / could|Khả năng không chắc.
+t: They ___ not agree with our plan.|may / might|Có thể không.
+t: This ___ be the answer, but I need to check.|could / might / may|Khả năng.
+s: It might rain later.|Lát nữa có thể mưa.
+s: I may be a little late.|Có thể tôi sẽ đến muộn một chút.
+s: That could be a good idea.|Đó có thể là một ý hay.
+s: She might not know about it.|Có thể cô ấy chưa biết chuyện đó.
+# asas|B1|So sánh bằng: as ... as|Equal comparison: as ... as|as + tính từ/trạng từ + as  ·  not as ... as  ·  the same as
+> as + tính từ + as dùng để nói hai thứ ngang nhau. not as ... as nghĩa là kém hơn.
+> Với số lượng: as much + danh từ không đếm được + as; as many + danh từ đếm được + as.
+> twice as ... as, three times as ... as dùng để nói gấp hai, gấp ba.
+= Tiếng Việt nói "bằng", "không bằng"; tiếng Anh kẹp tính từ giữa hai chữ as, và tính từ giữ nguyên dạng gốc.
+! She is as taller as me. → She is as tall as me. — Giữa as ... as dùng tính từ nguyên dạng.
+! This is not so good than that. → This is not as good as that. — Dùng as, không dùng than.
+p: Cả hai chữ as đều đọc nhẹ thành /əz/; trọng âm rơi vào tính từ ở giữa.|as good as, as soon as, not as big as
+e: This year's profit is as high as last year's.|Lợi nhuận năm nay cao bằng năm ngoái.
+e: The second quarter was not as strong as the first.|Quý hai không mạnh bằng quý một.
+q: My car is ___ yours.|as fast as;as faster as;so fast than;fast as|0|as + tính từ nguyên dạng + as.
+q: This phone isn't ___ that one.|as expensive than;as expensive as;more expensive as;expensive as than|1|not as ... as.
+q: We don't have ___ time as we thought.|as many;as much;so many;much as|1|time không đếm được → as much.
+q: The new office is twice ___ the old one.|bigger as;as big as;as big than;so big|1|twice as ... as.
+t: He is as tall ___ his father.|as|as + tính từ + as.
+t: There aren't as ___ people as yesterday.|many|people đếm được → many.
+t: Call me as ___ as possible. (sớm)|soon|as soon as possible.
+s: It is not as difficult as it looks.|Nó không khó như vẻ ngoài.
+s: Please reply as soon as possible.|Vui lòng trả lời sớm nhất có thể.
+s: This one is as good as that one.|Cái này tốt bằng cái kia.
+s: We sold twice as many units as last year.|Chúng tôi bán được gấp đôi số sản phẩm so với năm ngoái.
 `
 export const GRAMMAR = parseUnits(RAW, 'g', ['order', 'listen', 'speak', 'order'])
 
 // Các chủ đề sẽ được viết tiếp để đủ giáo trình A1 → B2 (hiện trong trang Ngữ pháp với nhãn "Sắp có").
 export const PLANNED: Record<Level, string[]> = {
-  A1: ['Đại từ nhân xưng và tính từ sở hữu', 'Danh từ số ít, số nhiều', 'This, that, these, those', 'There is, there are', 'Have got',
-    'Hiện tại đơn: khẳng định, phủ định, câu hỏi', 'Can, can\'t', 'Câu mệnh lệnh', 'Like + V-ing', 'Giới từ chỉ vị trí', 'Quá khứ của to be: was, were'],
+  A1: [],
   A2: [],
-  B1: ['Hiện tại hoàn thành tiếp diễn', 'Quá khứ hoàn thành', 'Tương lai tiếp diễn', 'Câu hỏi đuôi', 'Câu hỏi gián tiếp', 'So, such', 'Both, either, neither',
-    'Mạo từ nâng cao', 'May, might, could (khả năng)', 'Be able to, manage to', 'Make, let, allow', 'Cụm động từ thông dụng', 'Mệnh đề chỉ mục đích',
-    'So sánh bằng: as ... as', 'Tính từ đuôi -ed và -ing', 'Câu bị động với hai tân ngữ', 'Unless, as long as, provided'],
+  B1: ['Tương lai tiếp diễn', 'So, such', 'Both, either, neither',
+    'Mạo từ nâng cao', 'Be able to, manage to', 'Make, let, allow', 'Cụm động từ thông dụng', 'Mệnh đề chỉ mục đích',
+     'Tính từ đuôi -ed và -ing', 'Câu bị động với hai tân ngữ', 'Unless, as long as, provided'],
   B2: ['Tương lai hoàn thành', 'Câu điều kiện hỗn hợp', 'Mệnh đề quan hệ không xác định', 'Rút gọn mệnh đề quan hệ', 'Bị động nâng cao: It is said that',
     'Have something done', 'Câu chẻ: It is ... that', 'Would rather, had better', 'Used to, be used to, get used to', 'Động từ + giới từ', 'Danh động từ hoàn thành',
     'Câu tường thuật với động từ đặc biệt', 'Từ nối nâng cao', 'Nhấn mạnh với do, does, did', 'Thức giả định'],
