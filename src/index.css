@@ -173,10 +173,18 @@ form .primary, .card > .primary { width: 100%; }
 .slide { animation: slide .3s ease; } .bounce { animation: bounce .35s ease; } .shake { animation: shake .4s ease; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .confetti { display: none; } }
 
-/* Ảnh minh họa thật */
-.photo { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 20px; margin: 4px 0 12px; background: var(--line); }
-.photo.sm { position: absolute; top: 12px; right: 14px; width: 84px; height: 63px; border-radius: 14px; margin: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
-.card.slide:has(.photo.sm) .prompt { padding-right: 92px; }
+/* Thẻ từ vựng: hình lớn và chữ lớn để ghi nhớ bằng hình ảnh */
+.photo { width: 100%; min-height: 160px; border-radius: 22px; margin: 2px 0 14px; background: var(--bg); overflow: hidden; display: grid; place-items: center; }
+.photo img { width: 100%; height: auto; max-height: min(48vh, 420px); object-fit: contain; display: block; }
+.example button.ghost { min-height: 28px; padding: 0 4px; font-size: .95rem; vertical-align: middle; }
+.card.intro, .card.vocab-test { text-align: center; }
+.card.intro .word, .card.vocab-test .word { font-size: clamp(2.6rem, 10vw, 3.6rem); line-height: 1.1; margin: 0 0 6px; letter-spacing: -.01em; }
+.card.intro .word button, .card.vocab-test .word button { font-size: 1.6rem; vertical-align: middle; }
+.meaning { font-size: clamp(1.35rem, 5vw, 1.7rem); font-weight: 800; margin-bottom: 10px; }
+.card.intro .example, .card.vocab-test .example { font-size: 1.08rem; margin-bottom: 8px; }
+.card.vocab-test input { font-size: 1.5rem; font-weight: 800; text-align: center; padding: 14px; letter-spacing: .02em; }
+.card.vocab-test input::placeholder { font-size: .95rem; font-weight: 600; letter-spacing: 0; }
+.card.intro .picture { width: 170px; height: 170px; font-size: 5.4rem; }
 .credits { padding-left: 18px; font-size: .8rem; color: var(--muted); max-height: 260px; overflow: auto; }
 .credits a { color: var(--accent); font-weight: 700; }
 summary { cursor: pointer; font-weight: 700; color: var(--accent); }

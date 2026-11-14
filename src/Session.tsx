@@ -28,19 +28,29 @@ const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ'
 
 /** intro = giới thiệu từ mới; lesson = đọc bài (id là mã chủ đề); test = kiểm tra. */
 interface Item { id: string; phase: 'intro' | 'lesson' | 'test' }
-interface Vocab { id: string; word: string; vi: string; ex: string; deck: string; img?: string; audio?: string }
+interface Vocab { id: string; word: string; vi: string; ex: string; forms: string[]; deck: string; img?: string; audio?: string }
 
-/** Thẻ từ vựng người dùng nhập từ Anki; nếu câu ví dụ có chứa từ thì đánh dấu để đục lỗ. */
+/** Cú pháp đục lỗ của Anki: {{c1::từ}} hoặc {{c1::từ::gợi ý}}. */
+const CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g
+const escapeRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Thẻ từ vựng người dùng nhập từ Anki. Mọi chỗ từ cần học xuất hiện trong câu ví dụ
+ * (kể cả dạng thêm -s, -ed, -ing và phần đục lỗ sẵn của Anki) được đánh dấu {…} để che đi khi kiểm tra.
+ */
 function vocab(id: string): Vocab | undefined {
   const n = NOTE.get(id)
   if (!n) return undefined
-  const i = n.example.toLowerCase().indexOf(n.word.toLowerCase())
-  const ex = i >= 0 ? `${n.example.slice(0, i)}{${n.example.slice(i, i + n.word.length)}}${n.example.slice(i + n.word.length)}` : n.example
-  return { id, word: n.word, vi: n.meaning, ex, deck: n.deck, img: n.img, audio: n.audio }
+  const word = n.word.replace(CLOZE, '$1').trim()
+  const forms = new Set([word.toLowerCase()])
+  const text = n.example.replace(CLOZE, (_, inner: string) => { forms.add(inner.trim().toLowerCase()); return inner })
+  const alt = [...forms].filter(Boolean).sort((x, y) => y.length - x.length).map(escapeRe).join('|')
+  const ex = alt ? text.replace(new RegExp(`\\b((?:${alt})(?:s|es|ed|d|ing)?)\\b`, 'gi'), '{$1}') : text
+  return { id, word, vi: n.meaning.replace(CLOZE, '$1'), ex, forms: [...forms], deck: n.deck, img: n.img, audio: n.audio }
 }
 export const known = (id: string) => EX.has(id) || NOTE.has(id)
 
-function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
+function Pic({ v }: { v: Vocab }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     let live = true
@@ -48,8 +58,8 @@ function Pic({ v, sm }: { v: Vocab; sm?: boolean }) {
     if (v.img) mediaUrl(v.deck, v.img).then((u) => { if (live) setUrl(u) })
     return () => { live = false }
   }, [v.img, v.deck])
-  if (v.img && url) return <img className={`photo${sm ? ' sm' : ''}`} src={url} alt="" />
-  return sm || v.img ? null : <div className="picture" aria-hidden="true">📖</div>
+  if (v.img) return <div className="photo">{url && <img src={url} alt="" />}</div>
+  return <div className="picture" aria-hidden="true">📖</div>
 }
 async function say(v: Vocab) {
   const url = v.audio ? await mediaUrl(v.deck, v.audio) : null
@@ -92,9 +102,10 @@ function buildQueue(mode: Mode, minutes: number): Item[] {
   return [...due, ...out]
 }
 
-const cloze = (ex: string) => ex.replace(/\{[^}]+\}/, '_____')
+const cloze = (ex: string) => ex.replace(/\{[^}]+\}/g, '_____')
 const plain = (ex: string) => ex.replace(/[{}]/g, '')
-const formIn = (ex: string) => ex.match(/\{([^}]+)\}/)?.[1] ?? ''
+/** Câu ví dụ nhiều phần (định nghĩa → câu mẫu) được tách thành từng dòng. */
+const lines = (ex: string) => ex.split('→').map((t) => t.trim()).filter(Boolean)
 /** Điền đáp án vào các chỗ trống của câu hỏi (đáp án kiểu "Have / eaten" điền lần lượt từng phần). */
 function fill(q: string, answer: string): string {
   const parts = answer.split(' / ')
@@ -202,8 +213,10 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
           <span className="tag new">✨ Từ mới · New word</span>
           <Pic v={word} />
           <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>
-          <p>{word.vi}</p>
-          {word.ex && <p className="example">{plain(word.ex)} <button className="ghost" onClick={() => speak(plain(word.ex))} aria-label="Nghe câu · Listen">🔊</button></p>}
+          <p className="meaning">{word.vi}</p>
+          {lines(plain(word.ex)).map((t, i) => (
+            <p key={i} className="example">{t} <button className="ghost" onClick={() => speak(t)} aria-label="Nghe câu · Listen">🔊</button></p>
+          ))}
           <button className="primary" onClick={() => { setFresh((n) => n + 1); addNewWord(); advance({ id: item.id, phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
@@ -211,14 +224,15 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
       )}
 
       {word && item.phase === 'test' && (
-        <section className="card slide" key={key}>
+        <section className="card slide vocab-test" key={key}>
           <span className="tag vocab">📚 Từ vựng · Vocabulary</span>
-          <Pic v={word} sm />
-          <p className="prompt">{word.vi}</p>
-          {word.ex && <p className="example">{checked ? plain(word.ex) : cloze(word.ex)}</p>}
+          <Pic v={word} />
+          {checked && <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>}
+          <p className="meaning">{word.vi}</p>
+          {lines(checked ? plain(word.ex) : cloze(word.ex)).map((t, i) => <p key={i} className="example">{t}</p>)}
           <form onSubmit={(e) => {
             e.preventDefault()
-            if (!checked) setAnswer({ ok: sameText(input, word.word) || (!!formIn(word.ex) && sameText(input, formIn(word.ex))), given: input })
+            if (!checked) setAnswer({ ok: sameText(input, word.word) || word.forms.some((f) => sameText(input, f)), given: input })
           }}>
             <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} disabled={checked}
               placeholder="Gõ từ tiếng Anh · Type the English word" autoCapitalize="none" autoComplete="off" spellCheck={false} />
