@@ -29,10 +29,15 @@ const NEW_COUNT: Record<Mode, Record<number, number>> = {
 export const REVIEW_CAP: Record<number, number> = { 5: 25, 15: 70, 30: 150 }
 /** Khi số thẻ từ vựng tồn vượt mức này, tạm dừng từ mới cho đến khi ôn bớt. */
 export const backlogLimit = () => Math.max(40, getState().dailyNew * 4)
-const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu' }
+const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu', pick: 'Chọn câu đúng' }
 
-/** intro = giới thiệu từ mới; lesson = đọc bài (id là mã chủ đề); test = kiểm tra. */
-interface Item { id: string; phase: 'intro' | 'lesson' | 'test' }
+/**
+ * intro = giới thiệu từ mới; test = kiểm tra; lesson = đọc bài (id là mã chủ đề);
+ * choice = hỏi đọc bài hay kiểm tra nhanh (id là mã chủ đề); verdict = kết quả kiểm tra nhanh (id là mã chủ đề).
+ * probe = câu hỏi thuộc phần kiểm tra nhanh.
+ */
+interface Item { id: string; phase: 'intro' | 'lesson' | 'test' | 'choice' | 'verdict'; probe?: boolean }
+const PROBES = 3
 
 export const known = (id: string) => EX.has(id) || NOTE.has(baseId(id))
 
@@ -76,17 +81,22 @@ function buildQueue(mode: Mode, minutes: number): Item[] {
     const fresh = paused ? [] : notes.filter((n) => !s.cards[n.id] && !s.cards[recId(n.id)]).slice(0, Math.min(cap, newWordsLeft()))
     return [...due, ...promote, ...fresh.map((n): Item => ({ id: n.id, phase: 'intro' }))]
   }
-  // Bài tập mới theo thứ tự chủ đề; chủ đề chưa học lần nào thì cho đọc bài trước.
+  return [...due, ...grammarNew(cap)]
+}
+
+/** Bài tập ngữ pháp mới theo thứ tự chủ đề; chủ đề chưa học lần nào thì hỏi đọc bài hay kiểm tra nhanh trước. */
+function grammarNew(cap: number, skip: Set<string> = new Set()): Item[] {
+  const s = getState()
   const topics = ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv))
-  const fresh = topics.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, cap)
+  const fresh = topics.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id] && !skip.has(e.id)).slice(0, cap)
   const out: Item[] = []
   const taught = new Set<string>()
   for (const e of fresh) {
     const started = TOPIC.get(e.topic)!.exercises.some((x) => s.cards[x.id])
-    if (!started && !taught.has(e.topic)) { taught.add(e.topic); out.push({ id: e.topic, phase: 'lesson' }) }
+    if (!started && !taught.has(e.topic)) { taught.add(e.topic); out.push({ id: e.topic, phase: 'choice' }) }
     out.push({ id: e.id, phase: 'test' })
   }
-  return [...due, ...out]
+  return out
 }
 
 const cloze = (ex: string) => ex.replace(/\{[^}]+\}/g, '_____')
@@ -101,6 +111,7 @@ function fill(q: string, answer: string): string {
 }
 /** Câu đúng hoàn chỉnh của một bài tập, để hiện và đọc lên sau khi trả lời. */
 export function solution(ex: Exercise): string {
+  if (ex.kind === 'pick') return ex.opts[ex.a]
   if (ex.kind === 'mcq') return fill(ex.q, ex.opts[ex.a])
   if (ex.kind === 'gap') return ex.q.replace(/\s*\([^)]*\)/g, '').replace(/___/, ex.answers[0])
   return ex.q
@@ -140,11 +151,14 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const [right, setRight] = useState(0)
   const [fresh, setFresh] = useState(0)
   const [misses, setMisses] = useState<string[]>([])
+  const [probe, setProbe] = useState<Record<string, boolean[]>>({})
+  const [peek, setPeek] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const item = queue[0]
   const lesson = item?.phase === 'lesson' ? TOPIC.get(item.id) : undefined
-  const word = item && item.phase !== 'lesson' ? vocab(item.id) : undefined
+  const topicCard = item && (item.phase === 'choice' || item.phase === 'verdict') ? TOPIC.get(item.id) : undefined
+  const word = item && (item.phase === 'intro' || item.phase === 'test') ? vocab(item.id) : undefined
   const isRec = !!item && isRecId(item.id)
   const ex = item?.phase === 'test' ? EX.get(item.id) : undefined
   const rec = item ? getState().cards[item.id] : undefined
@@ -162,7 +176,37 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
     if (rest.length === 0 || (timeUp && !requeue && item.phase === 'test')) setFinished(true)
     setQueue(rest)
   }
+  /** Chọn cách bắt đầu một chủ đề mới: đọc bài, hoặc làm 3 câu kiểm tra nhanh. */
+  function startTopic(read: boolean) {
+    const t = TOPIC.get(item.id)!
+    if (read) { setQueue([{ id: t.id, phase: 'lesson' }, ...queue.slice(1)]); return }
+    const s = getState()
+    const unseen = t.exercises.filter((e) => !s.cards[e.id])
+    // Ưu tiên mỗi dạng một câu: trắc nghiệm, điền từ, chọn câu đúng / sắp xếp.
+    const picks: Exercise[] = []
+    for (const k of ['mcq', 'gap', 'pick', 'order'] as Kind[]) { const e = unseen.find((x) => x.kind === k && !picks.includes(x)); if (e && picks.length < PROBES) picks.push(e) }
+    for (const e of unseen) if (picks.length < PROBES && !picks.includes(e)) picks.push(e)
+    const rest = queue.slice(1).filter((x) => !picks.some((p) => p.id === x.id))
+    setProbe((m) => ({ ...m, [t.id]: [] }))
+    setQueue([...picks.map((e): Item => ({ id: e.id, phase: 'test', probe: true })), { id: t.id, phase: 'verdict' }, ...rest])
+  }
+  /** Sau kiểm tra nhanh: đúng hết thì đánh dấu đã nắm cả chủ đề (ôn thưa), sai thì vào bài học. */
+  function finishProbe(mastered: boolean) {
+    const t = TOPIC.get(item.id)!
+    if (mastered) {
+      const s = getState()
+      for (const e of t.exercises) if (!s.cards[e.id]) grade(e.id, Rating.Easy, false)
+      const before = queue.slice(1)
+      const rest = before.filter((x) => !x.id.startsWith(`g:${t.id}:`) || x.phase !== 'test' || getState().cards[x.id]?.c.reps !== 1)
+      // Bù số bài vừa bỏ qua bằng bài của chủ đề kế tiếp, để phiên không kết thúc quá sớm.
+      const more = grammarNew(Math.max(1, before.length - rest.length), new Set(rest.map((x) => x.id)))
+      const next = [...rest, ...more]
+      if (next.length === 0) setFinished(true)
+      setQueue(next)
+    } else setQueue([{ id: t.id, phase: 'lesson' }, ...queue.slice(1)])
+  }
   function rate(g: Grade) {
+    if (item.probe) setProbe((m) => ({ ...m, [EX.get(item.id)!.topic]: [...(m[EX.get(item.id)!.topic] ?? []), correct] }))
     if (mode !== 'vocab' && !getState().cards[item.id]) setFresh((n) => n + 1)
     const ok = isRec ? g > Rating.Again : correct
     const due = grade(item.id, g)
@@ -176,7 +220,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
     advance(soon ? { id: item.id, phase: 'test' } : undefined)
   }
 
-  if (finished || !item || (!lesson && !word && !ex)) {
+  if (finished || !item || (!lesson && !topicCard && !word && !ex)) {
     const left = countDue(mode)
     return (
       <Page title={<L vi="Xong phiên học" en="Session complete" />}>
@@ -212,7 +256,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const key = `${item.id}-${item.phase}-${done}`
   const cheer = CHEERS[done % CHEERS.length], comfort = COMFORTS[done % COMFORTS.length]
   const unit = ex ? TOPIC.get(ex.topic)! : undefined
-  const View = ex ? { mcq: Mcq, gap: Gap, order: Order }[ex.kind] : null
+  const View = ex ? { mcq: Mcq, gap: Gap, order: Order, pick: Mcq }[ex.kind] : null
   const leechTag = leech ? ' · ⚠️ Từ khó' : ''
 
   return (
@@ -222,6 +266,39 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
         <span>{last || `Còn ${queue.length} mục trong hàng đợi · ${queue.length} queued`}</span>
         {combo >= 2 && <span className="combo" key={combo}>🔥 {combo} đúng liên tiếp</span>}
       </p>
+
+      {topicCard && item.phase === 'choice' && (
+        <section className="card slide topic-card" key={key}>
+          <span className="tag write">📘 Chủ đề mới · New topic · {topicCard.level}</span>
+          <h2 className="lesson-title">{topicCard.vi}<small>{topicCard.en}</small></h2>
+          {topicCard.formula && <p className="formula">{topicCard.formula}</p>}
+          <BuddySays mood="think" size={70} en="Already know it?" vi="Nếu đã chắc chủ đề này, làm 3 câu kiểm tra nhanh để bỏ qua phần học." />
+          <div className="choice">
+            <button className="primary" onClick={() => startTopic(false)}>⚡ <L vi="Kiểm tra nhanh 3 câu" en="Quick check" /></button>
+            <button onClick={() => startTopic(true)}>📖 <L vi="Đọc bài trước" en="Read the lesson first" /></button>
+          </div>
+        </section>
+      )}
+
+      {topicCard && item.phase === 'verdict' && (() => {
+        const res = probe[topicCard.id] ?? []
+        const ok = res.filter(Boolean).length
+        const mastered = res.length > 0 && ok === res.length
+        return (
+          <section className="card slide topic-card center" key={key}>
+            <Buddy mood={mastered ? 'cheer' : 'think'} size={110} />
+            <h2>{mastered ? 'Bạn đã nắm chủ đề này!' : `Đúng ${ok}/${res.length} câu`}</h2>
+            <p className="muted">
+              {mastered
+                ? `"${topicCard.vi}" được đánh dấu đã nắm. Các bài tập của chủ đề này sẽ chỉ quay lại thưa thớt để giữ trí nhớ.`
+                : `Cùng đọc bài "${topicCard.vi}" rồi làm tiếp các bài tập nhé.`}
+            </p>
+            <button className="primary" onClick={() => finishProbe(mastered)}>
+              {mastered ? <L vi="Tiếp tục" en="Continue" /> : <L vi="Đọc bài" en="Read the lesson" />}
+            </button>
+          </section>
+        )
+      })()}
 
       {lesson && (
         <section className="card slide lesson" key={key}>
@@ -302,7 +379,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
 
       {ex && unit && View && (
         <section className="card slide exercise" key={key} data-ex={ex.id} data-kind={ex.kind}>
-          <span className="tag write">📘 {unit.vi} · {KIND[ex.kind]}</span>
+          <span className="tag write">{item.probe ? '⚡ Kiểm tra nhanh · ' : '📘 '}{unit.vi} · {KIND[ex.kind]}</span>
           <View ex={ex} done={checked} onAnswer={setAnswer} />
         </section>
       )}
@@ -321,6 +398,9 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
             <>
               <p className="answer">{solution(ex)} <button className="ghost" onClick={() => speak(solution(ex))} aria-label="Nghe · Listen">🔊</button></p>
               {(ex.why || ex.vi) && <p className="why">{ex.why || ex.vi}</p>}
+              {!correct && !item.probe && unit && (
+                <button className="ghost line" onClick={() => setPeek(unit.id)}>📘 Xem lại bài: {unit.vi}</button>
+              )}
             </>
           )}
           <div className="grades">
@@ -343,6 +423,16 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
             )}
           </div>
         </section>
+      )}
+
+      {peek && TOPIC.get(peek) && (
+        <div className="sheet-wrap" onClick={() => setPeek(null)}>
+          <section className="card sheet lesson" onClick={(e) => e.stopPropagation()}>
+            <button className="ghost close" onClick={() => setPeek(null)} aria-label="Đóng · Close">✕</button>
+            <Lesson t={TOPIC.get(peek)!} />
+            <button className="primary" onClick={() => setPeek(null)}><L vi="Quay lại bài tập" en="Back to the exercise" /></button>
+          </section>
+        </div>
       )}
     </Page>
   )

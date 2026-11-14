@@ -9,7 +9,8 @@ import type { Level } from './vocab'
 //   q: câu hỏi trắc nghiệm|A;B;C;D|vị trí đáp án đúng (từ 0)|giải thích
 //   t: câu điền chỗ trống (tự gõ)|đáp án (các cách viết đúng cách nhau bằng " / ")|giải thích
 //   s: câu mẫu tiếng Anh|nghĩa — app tự tạo bài sắp xếp từ thành câu từ các câu này
-export type Kind = 'mcq' | 'gap' | 'order'
+//   Ngoài ra app tự tạo thêm bài "Chọn câu đúng" từ các dòng ! và bài sắp xếp câu từ các dòng e: ngắn.
+export type Kind = 'mcq' | 'gap' | 'order' | 'pick'
 export interface Exercise { id: string; topic: string; kind: Kind; q: string; opts: string[]; a: number; answers: string[]; vi: string; why: string }
 export interface Topic {
   id: string; level: Level; vi: string; en: string; formula: string; domain?: string
@@ -32,9 +33,10 @@ export function parseUnits(raw: string, prefix: string): Topic[] {
     } else if (line.startsWith('> ')) t.notes.push(body)
     else if (line.startsWith('= ')) t.compare.push(body)
     else if (line.startsWith('! ')) {
-      const [wrong, rest] = body.split(' → ')
-      const [right, why] = rest.split(' — ')
-      t.mistakes.push([wrong, right, why ?? ''])
+      // Chỉ tách ở mũi tên và gạch ngang đầu tiên; phần giải thích có thể chứa thêm "→".
+      const arrow = body.indexOf(' → '), wrong = body.slice(0, arrow), rest = body.slice(arrow + 3)
+      const dash = rest.indexOf(' — '), right = dash < 0 ? rest : rest.slice(0, dash), why = dash < 0 ? '' : rest.slice(dash + 3)
+      t.mistakes.push([wrong, right, why])
     } else if (line.startsWith('p: ')) {
       const [note, samples] = body.split('|')
       t.sounds.push([note, (samples ?? '').split(', ').filter(Boolean)])
@@ -51,7 +53,26 @@ export function parseUnits(raw: string, prefix: string): Topic[] {
       t.exercises.push(ex(prefix === 'g' ? `s${n}` : String(n), 'order', { q, vi, answers: [q] }))
     }
   }
+  for (const t of out) addDerived(t, prefix)
   return out
+}
+
+/** Số giả ngẫu nhiên cố định theo chuỗi, để thứ tự đáp án không đổi giữa các lần mở app. */
+const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
+
+/** Tạo thêm bài tập từ nội dung bài học: chọn câu đúng (từ lỗi hay gặp) và sắp xếp câu (từ câu ví dụ ngắn). */
+function addDerived(t: Topic, prefix: string) {
+  t.mistakes.forEach(([wrong, right, why], i) => {
+    const id = `${prefix}:${t.id}:m${i + 1}`
+    const rightFirst = hash(id) % 2 === 0
+    t.exercises.push({ id, topic: t.id, kind: 'pick', q: 'Câu nào đúng? · Which sentence is correct?', opts: rightFirst ? [right, wrong] : [wrong, right],
+      a: rightFirst ? 0 : 1, answers: [right], vi: '', why })
+  })
+  t.examples.forEach(([en, vi], i) => {
+    const words = en.split(' ')
+    if (en.includes('→') || /["“”]/.test(en) || words.length < 4 || words.length > 12) return
+    t.exercises.push({ id: `${prefix}:${t.id}:e${i + 1}`, topic: t.id, kind: 'order', q: en, opts: [], a: 0, answers: [en], vi, why: '' })
+  })
 }
 
 const RAW = `
@@ -1079,6 +1100,552 @@ s: It is not as difficult as it looks.|Nó không khó như vẻ ngoài.
 s: Please reply as soon as possible.|Vui lòng trả lời sớm nhất có thể.
 s: This one is as good as that one.|Cái này tốt bằng cái kia.
 s: We sold twice as many units as last year.|Chúng tôi bán được gấp đôi số sản phẩm so với năm ngoái.
+# futcont|B1|Tương lai tiếp diễn|Future continuous|S + will be + V-ing
+> Diễn tả việc sẽ đang diễn ra tại một thời điểm cụ thể trong tương lai: This time tomorrow, I will be flying to Hanoi.
+> Dùng để hỏi kế hoạch của người khác một cách lịch sự: Will you be using the car tonight?
+> Thường đi với: at this time tomorrow, at 8 p.m. next Monday, this time next week.
+= Tiếng Việt nói "giờ này ngày mai tôi đang bay"; tiếng Anh cần cả will be và V-ing để diễn tả "sẽ đang".
+! At 9 tomorrow I will work. → At 9 tomorrow I will be working. — Việc đang diễn ra tại một thời điểm tương lai dùng will be + V-ing.
+! I will be meet him at noon. → I will be meeting him at noon. — Sau will be phải là V-ing.
+p: will be rút gọn thành 'll be và đọc nhẹ; trọng âm rơi vào động từ V-ing.|I'll be working, she'll be waiting, will you be using
+e: This time next week, I will be lying on the beach.|Giờ này tuần sau, tôi sẽ đang nằm trên bãi biển.
+e: Will you be using the meeting room this afternoon?|Chiều nay anh có dùng phòng họp không?
+q: Don't call me at 8. I ___ dinner with a client.|will have;will be having;am have;have been having|1|Việc đang diễn ra lúc 8 giờ → will be + V-ing.
+q: This time tomorrow, we ___ over the Pacific.|will fly;will be flying;are flown;flew|1|"This time tomorrow" → tương lai tiếp diễn.
+q: ___ you be working late tonight?|Do;Are;Will;Have|2|Câu hỏi: Will + S + be + V-ing.
+q: At 10 a.m. on Monday, she ___ her presentation.|will be giving;will gives;is give;will be give|0|will be + V-ing.
+t: At midnight, I ___ (sleep).|will be sleeping / 'll be sleeping|Đang ngủ tại một thời điểm tương lai.
+t: Next month they ___ (work) on a new project.|will be working|will be + V-ing.
+t: ___ you be visiting the factory next week?|Will|Câu hỏi lịch sự về kế hoạch.
+s: I'll be waiting for you at the station.|Tôi sẽ đợi bạn ở nhà ga.
+s: This time tomorrow, I'll be driving to Da Lat.|Giờ này ngày mai tôi sẽ đang lái xe đi Đà Lạt.
+s: Will you be needing anything else?|Bạn có cần thêm gì nữa không?
+s: We will be discussing the budget at the meeting.|Chúng ta sẽ thảo luận ngân sách tại cuộc họp.
+# sosuch|B1|So và such|So and such|so + tính từ/trạng từ  ·  such (a/an) + tính từ + danh từ  ·  so/such ... that
+> so đi với tính từ hoặc trạng từ: so tired, so quickly.
+> such đi với cụm danh từ: such a nice day, such good food, such kind people.
+> Kết hợp với that để nói kết quả: It was so hot that we stayed inside.
+= Tiếng Việt dùng "quá", "thật là" cho mọi trường hợp; tiếng Anh chọn so hay such tùy sau đó là tính từ hay cụm danh từ.
+! It was so a good film. → It was such a good film. — Có danh từ phía sau dùng such.
+! She is such kind. → She is so kind. — Chỉ có tính từ thì dùng so.
+p: so và such thường được nhấn và kéo dài khi nói để tăng cảm xúc. Âm /tʃ/ cuối such bật hơi rõ.|so good, such a shame, so much
+e: The meeting was so long that I missed my train.|Cuộc họp dài đến nỗi tôi lỡ chuyến tàu.
+e: It was such a difficult decision.|Đó là một quyết định thật khó khăn.
+q: The coffee was ___ hot that I couldn't drink it.|such;so;such a;too|1|Sau là tính từ hot → so.
+q: We had ___ great time in Phu Quoc.|so;such;such a;so a|2|Danh từ đếm được số ít → such a.
+q: They are ___ friendly people.|so;such;such a;so much|1|Danh từ số nhiều → such (không có a).
+q: He spoke ___ quickly that nobody understood.|such;so;such a;very|1|Trạng từ quickly → so.
+t: It was ___ a beautiful day that we went to the beach.|such|such a + tính từ + danh từ.
+t: I'm ___ tired. I need a break.|so|Chỉ có tính từ → so.
+t: There was ___ much traffic that we were late.|so|so much + danh từ không đếm được.
+s: The food was so good.|Đồ ăn ngon quá.
+s: It was such a long day.|Hôm nay thật là một ngày dài.
+s: Thank you so much for your help.|Cảm ơn bạn rất nhiều vì đã giúp.
+s: She works so hard that she rarely takes a holiday.|Cô ấy làm việc chăm đến mức hiếm khi nghỉ phép.
+# both|B1|Both, either, neither|Both, either, neither|both ... and  ·  either ... or  ·  neither ... nor
+> both ... and: cả hai, động từ chia số nhiều: Both Lan and Minh are engineers.
+> either ... or: một trong hai. neither ... nor: không cái nào trong hai.
+> Đứng một mình: both of them, either of them, neither of them. Trả lời ngắn đồng ý với câu phủ định: Me neither.
+= Tiếng Việt nói "không ... cũng không ..."; tiếng Anh dùng neither ... nor và để động từ ở dạng khẳng định.
+! Neither John nor Mary don't like coffee. → Neither John nor Mary likes coffee. — neither đã mang nghĩa phủ định.
+! Both of them is late. → Both of them are late. — both đi với động từ số nhiều.
+p: either và neither có hai cách đọc đều đúng: /ˈiːðər/ (Anh-Mỹ hay dùng) và /ˈaɪðər/. Âm /ð/ đặt lưỡi giữa hai hàm răng.|either, neither, both
+e: You can pay either by cash or by card.|Bạn có thể trả bằng tiền mặt hoặc bằng thẻ.
+e: Neither option is cheap.|Không phương án nào rẻ cả.
+q: ___ my brother and my sister work in banking.|Either;Neither;Both;All|2|Cả hai → Both ... and.
+q: We can meet ___ on Monday or on Tuesday.|both;either;neither;whether|1|Một trong hai → either ... or.
+q: ___ of the two hotels was available, so we stayed with friends.|Both;Either;Neither;None|2|Không cái nào → Neither.
+q: "I don't like spicy food." "Me ___."|too;either;neither;also|2|Đồng ý với câu phủ định → Me neither.
+t: ___ the price nor the quality was acceptable.|Neither|neither ... nor.
+t: You can choose ___ the red one or the blue one.|either|either ... or.
+t: ___ of my parents are retired.|Both|Cả hai, động từ số nhiều.
+s: Both options have advantages.|Cả hai phương án đều có ưu điểm.
+s: I don't mind either way.|Cách nào tôi cũng được.
+s: Neither of us knew the answer.|Không ai trong chúng tôi biết câu trả lời.
+s: She speaks both English and Japanese.|Cô ấy nói được cả tiếng Anh lẫn tiếng Nhật.
+# articles2|B1|Mạo từ nâng cao|Articles: advanced uses|the + sông, biển, nhạc cụ, nhóm người  ·  không mạo từ với đa số quốc gia, bữa ăn, môn thể thao
+> Dùng the với: sông, biển, dãy núi (the Mekong, the Pacific); tên nước có Republic, Kingdom, States hoặc ở dạng số nhiều (the United States, the Philippines); nhạc cụ (play the piano).
+> Không dùng mạo từ với: tên đa số quốc gia, thành phố, ngôn ngữ, bữa ăn, môn thể thao (Vietnam, English, have lunch, play football).
+> the + tính từ chỉ một nhóm người: the rich, the poor, the elderly, the unemployed.
+= Tiếng Việt không có mạo từ nên người Việt hay thêm the không cần thiết ("the Vietnam") hoặc bỏ sót the với nhạc cụ, tên sông.
+! I live in the Vietnam. → I live in Vietnam. — Tên đa số quốc gia không dùng the.
+! She plays piano very well. → She plays the piano very well. — Chơi nhạc cụ dùng the.
+p: the đọc /ðə/ trước phụ âm và /ði/ trước nguyên âm: the Pacific /ðə/, the elderly /ði/.|the United States, the elderly, the piano
+e: The rich should pay more taxes.|Người giàu nên đóng thuế nhiều hơn.
+e: We had lunch near the Saigon River.|Chúng tôi ăn trưa gần sông Sài Gòn.
+q: She works for a company in ___ United Kingdom.|a;an;the;—|2|Tên nước có Kingdom → the.
+q: I usually have ___ breakfast at seven.|a;the;an;—|3|Bữa ăn nói chung → không mạo từ.
+q: The government should help ___ unemployed.|an;the;a;—|1|the + tính từ chỉ nhóm người.
+q: He can play ___ guitar.|a;an;the;—|2|Nhạc cụ → the.
+t: ___ Mekong is the longest river in Southeast Asia.|The|Tên sông dùng the.
+t: Have you ever been to ___ Philippines?|the|Tên nước dạng số nhiều dùng the.
+t: My wife works with ___ elderly in a care home.|the|the + tính từ chỉ nhóm người.
+s: I live in Vietnam.|Tôi sống ở Việt Nam.
+s: Can you play the piano?|Bạn có chơi được piano không?
+s: Let's have dinner together.|Chúng ta ăn tối cùng nhau nhé.
+s: The elderly need more care.|Người già cần được chăm sóc nhiều hơn.
+# ableto|B1|Be able to, manage to|Be able to and manage to|S + be able to + V  ·  S + managed to + V
+> be able to dùng thay can ở những thì can không có: will be able to, have been able to.
+> Nói về một lần làm được việc khó trong quá khứ, dùng was able to hoặc managed to, không dùng could: I managed to finish on time.
+> could chỉ dùng cho khả năng chung trong quá khứ: I could swim when I was five.
+= Tiếng Việt chỉ nói "đã làm được"; tiếng Anh tách khả năng chung (could) với việc làm được trong một lần cụ thể (managed to, was able to).
+! I will can help you tomorrow. → I will be able to help you tomorrow. — Sau will không dùng can.
+! Yesterday I could finish the report on time. → Yesterday I managed to finish the report on time. — Một lần thành công cụ thể dùng managed to.
+p: able đọc /ˈeɪbəl/; to trong able to và managed to đọc nhẹ /tə/. managed đọc /ˈmænɪdʒd/.|able to, managed to, won't be able to
+e: I won't be able to attend the meeting.|Tôi sẽ không thể tham dự cuộc họp.
+e: We managed to cut costs by ten percent.|Chúng tôi đã cắt giảm được mười phần trăm chi phí.
+q: I hope I ___ visit you next summer.|can;will can;will be able to;could to|2|Tương lai → will be able to.
+q: The traffic was terrible, but we ___ arrive on time.|could;managed to;can;able to|1|Một lần làm được việc khó → managed to.
+q: She has ___ speak English since she was a child.|could;can;been able to;able|2|Hiện tại hoàn thành → has been able to.
+q: When I was young, I ___ run very fast.|could;managed;can;am able|0|Khả năng chung trong quá khứ → could.
+t: After many tries, he ___ (manage) to fix the machine.|managed|managed to + V.
+t: I'm sorry, I won't be ___ to come tonight.|able|won't be able to.
+t: Will you be able ___ finish it by Friday?|to|be able to + V.
+s: I managed to find a solution.|Tôi đã tìm ra được một giải pháp.
+s: Will you be able to join us?|Bạn có tham gia cùng chúng tôi được không?
+s: I haven't been able to sleep well.|Dạo này tôi không ngủ ngon được.
+s: She was able to answer every question.|Cô ấy đã trả lời được mọi câu hỏi.
+# makelet|B1|Make, let, allow|Make, let, allow|make + O + V  ·  let + O + V  ·  allow + O + to V
+> make + người + V nguyên mẫu: bắt hoặc khiến ai làm gì. My boss made me work late.
+> let + người + V nguyên mẫu: để, cho phép ai làm gì (thân mật). Let me help you.
+> allow + người + to V: cho phép (trang trọng hơn). Bị động: be allowed to V, be made to V.
+= Tiếng Việt dùng "cho", "bắt", "để" rồi động từ; tiếng Anh cần nhớ: sau make và let không có to, sau allow phải có to.
+! My parents let me to go out. → My parents let me go out. — Sau let không có to.
+! They don't allow us use phones. → They don't allow us to use phones. — Sau allow + người phải có to.
+p: Let me nói nhanh nghe như /ˈlemi/. made đọc /meɪd/, allowed đọc /əˈlaʊd/ (giống aloud).|let me, make me, allowed to
+e: Let me know if you need anything.|Cho tôi biết nếu bạn cần gì nhé.
+e: Visitors are not allowed to take photos.|Khách tham quan không được phép chụp ảnh.
+q: The teacher made us ___ the essay again.|write;to write;writing;wrote|0|make + O + V nguyên mẫu.
+q: My manager let me ___ home early.|to go;go;going;went|1|let + O + V nguyên mẫu.
+q: Employees are not allowed ___ in the office.|smoke;smoking;to smoke;smoked|2|be allowed to + V.
+q: ___ me show you how it works.|Allow;Make;Let;Have|2|Let me + V.
+t: Please let ___ know your decision. (tôi)|me|let + me.
+t: The company doesn't allow staff ___ work from home.|to|allow + O + to V.
+t: The bad weather made us ___ (cancel) the trip.|cancel|make + O + V nguyên mẫu.
+s: Let me check my calendar.|Để tôi xem lịch.
+s: My job makes me feel tired.|Công việc khiến tôi thấy mệt.
+s: We are allowed to work from home on Fridays.|Chúng tôi được làm ở nhà vào thứ Sáu.
+s: Don't let this chance slip away.|Đừng để cơ hội này vuột mất.
+# phrasal|B1|Cụm động từ thông dụng|Common phrasal verbs|động từ + tiểu từ: give up, find out, look after
+> Cụm động từ mang nghĩa khác với động từ gốc: give up = từ bỏ, find out = phát hiện ra, look after = chăm sóc.
+> Một số cụm tách được: danh từ đứng giữa hoặc sau (turn the TV off / turn off the TV), nhưng đại từ phải đứng giữa (turn it off).
+> Một số cụm không tách được: look after the kids, get on the bus.
+= Tiếng Việt không có cấu trúc này nên phải học như từ mới. Người Việt hay đặt đại từ sai chỗ, như "turn off it".
+! Please turn off it. → Please turn it off. — Đại từ đứng giữa động từ và tiểu từ.
+! I will look the kids after. → I will look after the kids. — look after không tách được.
+p: Trọng âm trong cụm động từ thường rơi vào tiểu từ phía sau: give UP, find OUT, turn it OFF.|give up, find out, turn it off
+e: Could you fill in this form, please?|Bạn điền vào mẫu này giúp tôi được không?
+e: We need to find out why sales dropped.|Chúng ta cần tìm hiểu vì sao doanh số giảm.
+q: Don't ___ . You can do it.|give up;give in up;up give;give off|0|give up = bỏ cuộc.
+q: Can you ___ my cat while I'm away?|look for;look after;look up;look out|1|look after = chăm sóc.
+q: If you don't know the word, ___ in the dictionary.|look up it;look it up;look it after;up look it|1|Đại từ đứng giữa: look it up.
+q: The meeting was ___ because the manager was ill.|called off;called up;called back;called on|0|call off = hủy.
+t: Please turn ___ your phones during the meeting.|off|turn off = tắt.
+t: I'll pick you ___ at the airport.|up|pick up = đón.
+t: We ran ___ of paper, so we couldn't print the report.|out|run out of = hết.
+s: Please turn it off.|Làm ơn tắt nó đi.
+s: I'll call you back later.|Tôi sẽ gọi lại cho bạn sau.
+s: We need to set up a meeting.|Chúng ta cần sắp xếp một cuộc họp.
+s: Can you find out the price?|Bạn tìm hiểu giá được không?
+# purpose|B1|Mệnh đề chỉ mục đích|Clauses of purpose|to V  ·  in order to V  ·  so that + S + can/will
+> Dùng to V hoặc in order to V (trang trọng hơn) để nói mục đích: I study English to get a better job.
+> Dùng so that + mệnh đề khi có chủ ngữ riêng hoặc có can, could, will, would: I'll send it now so that you can read it tonight.
+> Phủ định: in order not to V, so as not to V, hoặc so that ... won't / can't.
+= Tiếng Việt dùng "để" cho mọi trường hợp; tiếng Anh chọn to V hay so that tùy sau đó là động từ hay cả một mệnh đề.
+! I came here for meet you. → I came here to meet you. — Mục đích bằng động từ dùng to V, không dùng for.
+! I study hard so that pass the exam. → I study hard so that I can pass the exam. — Sau so that là một mệnh đề có chủ ngữ.
+p: to trong to V đọc nhẹ /tə/; so that nói liền, that đọc nhẹ /ðət/.|in order to, so that, to get
+e: I'm saving money to buy a house.|Tôi đang tiết kiệm tiền để mua nhà.
+e: Speak slowly so that everyone can understand.|Hãy nói chậm để mọi người đều hiểu.
+q: She went to the bank ___ some money.|for getting;to get;for get;so that get|1|Mục đích → to V.
+q: I left early ___ miss the train.|so as to not;in order not to;for not;to don't|1|Phủ định của mục đích → in order not to.
+q: I'll write it down ___ I don't forget.|to;so that;in order;for|1|Sau là mệnh đề có chủ ngữ → so that.
+q: The company cut prices ___ attract more customers.|so that;in order to;for;that|1|Sau là động từ → in order to.
+t: I'm learning English ___ get a better job.|to / in order to|Mục đích → to V.
+t: Turn on the light so ___ we can see.|that|so that + mệnh đề.
+t: She whispered so as ___ to wake the baby.|not|so as not to + V.
+s: I went to the shop to buy some milk.|Tôi ra cửa hàng để mua sữa.
+s: We left early to avoid the traffic.|Chúng tôi đi sớm để tránh kẹt xe.
+s: I'll send you the file so that you can check it.|Tôi sẽ gửi tệp để bạn kiểm tra.
+s: She works hard in order to support her family.|Cô ấy làm việc chăm chỉ để nuôi gia đình.
+# edging|B1|Tính từ đuôi -ed và -ing|-ed and -ing adjectives|người + -ed (cảm thấy)  ·  vật, việc + -ing (gây ra cảm giác)
+> Tính từ đuôi -ed mô tả cảm xúc của người: I am bored, she is interested.
+> Tính từ đuôi -ing mô tả vật hoặc việc gây ra cảm xúc đó: The film is boring, the news is interesting.
+> Các cặp hay gặp: bored/boring, tired/tiring, interested/interesting, confused/confusing, surprised/surprising, excited/exciting.
+= Tiếng Việt dùng một từ "chán" cho cả hai nghĩa; tiếng Anh tách "tôi thấy chán" (bored) với "cái này chán" (boring).
+! I am boring in this class. → I am bored in this class. — Nói cảm xúc của mình dùng -ed; I am boring nghĩa là "tôi là người nhàm chán".
+! The trip was very excited. → The trip was very exciting. — Chuyến đi gây ra cảm xúc → -ing.
+p: Đuôi -ed ở đây đọc theo quy tắc thường: bored /d/, tired /d/, interested /ɪd/, shocked /t/.|bored, interested, shocked
+e: I was surprised by the results.|Tôi bất ngờ trước kết quả.
+e: The instructions were really confusing.|Phần hướng dẫn thật khó hiểu.
+q: The lecture was so ___ that I fell asleep.|bored;boring;bore;bores|1|Bài giảng gây chán → boring.
+q: I'm very ___ in economics.|interesting;interested;interest;interests|1|Cảm xúc của tôi → interested.
+q: We were ___ to hear the good news.|exciting;excited;excite;excitement|1|Cảm xúc của chúng tôi → excited.
+q: This map is really ___ . I can't find anything.|confused;confusing;confuse;confusion|1|Tấm bản đồ gây khó hiểu → confusing.
+t: After the long journey, everyone was ___ (tire).|tired|Cảm giác của người → -ed.
+t: The results were very ___ (surprise).|surprising|Kết quả gây bất ngờ → -ing.
+t: Are you ___ (interest) in the job?|interested|Cảm xúc của người → -ed.
+s: I'm really tired today.|Hôm nay tôi rất mệt.
+s: The meeting was boring.|Cuộc họp thật chán.
+s: She was disappointed with the result.|Cô ấy thất vọng với kết quả.
+s: It's an interesting idea.|Đó là một ý tưởng thú vị.
+# passive2|B1|Câu bị động với hai tân ngữ|Passive with two objects|người + be + V3 + vật  ·  vật + be + V3 + to + người
+> Một số động từ có hai tân ngữ: give, send, show, offer, tell, pay, lend. They gave me a gift.
+> Có hai cách chuyển sang bị động; cách lấy người làm chủ ngữ phổ biến hơn: I was given a gift.
+> Cách còn lại lấy vật làm chủ ngữ và thêm to trước người nhận: A gift was given to me.
+= Tiếng Việt nói "Tôi được tặng một món quà"; tiếng Anh cũng đưa người lên làm chủ ngữ y như vậy: I was given a gift.
+! I was given to a gift. → I was given a gift. — Người làm chủ ngữ thì không cần to.
+! A bonus was paid me. → A bonus was paid to me. — Vật làm chủ ngữ thì phải có to trước người nhận.
+p: was và were đọc nhẹ /wəz/, /wər/; trọng âm rơi vào V3 và tân ngữ: I was GIVEN a CHANCE.|was given, were offered, was sent
+e: She was offered a job in Singapore.|Cô ấy được mời một công việc ở Singapore.
+e: The documents were sent to all managers.|Tài liệu đã được gửi đến tất cả các quản lý.
+q: I ___ a promotion last month.|was offered;offered;was offering;am offer|0|Người làm chủ ngữ của câu bị động.
+q: The prize was given ___ the best team.|for;to;at;by to|1|Vật làm chủ ngữ → given to + người.
+q: We ___ the results yesterday.|told;were told;was told;are telling|1|we → were told.
+q: All new staff ___ a laptop.|are given;give;are giving;is given|0|Hiện tại bị động, chủ ngữ số nhiều.
+t: He ___ (show) the new office by the manager.|was shown|Quá khứ bị động.
+t: The invoice was sent ___ the customer.|to|send something to someone.
+t: We ___ (pay) every month.|are paid|Hiện tại bị động.
+s: I was given a second chance.|Tôi đã được cho thêm một cơ hội.
+s: We were told to wait outside.|Chúng tôi được bảo đợi ở ngoài.
+s: She was offered a higher salary.|Cô ấy được đề nghị mức lương cao hơn.
+s: The report was sent to the director.|Báo cáo đã được gửi cho giám đốc.
+# unless|B1|Unless, as long as, provided|Unless, as long as, provided that|unless + khẳng định = if ... not  ·  as long as / provided (that) = miễn là
+> unless nghĩa là "trừ khi", tương đương if ... not. Sau unless dùng động từ khẳng định.
+> as long as và provided (that) nghĩa là "miễn là", nhấn mạnh điều kiện bắt buộc.
+> Giống câu điều kiện loại 1: mệnh đề unless hoặc as long as dùng hiện tại đơn, không dùng will.
+= Tiếng Việt có thể nói "trừ khi bạn không đến", nhưng tiếng Anh không dùng phủ định sau unless vì unless đã mang nghĩa "nếu không".
+! Unless you don't hurry, you will be late. → Unless you hurry, you will be late. — unless đã có nghĩa phủ định.
+! You can go as long as you will finish your work. → You can go as long as you finish your work. — Sau as long as dùng hiện tại đơn.
+p: unless nhấn âm thứ hai /ənˈles/; as long as nói liền, nhấn vào long.|unless, as long as, provided that
+e: We will miss the deadline unless we work faster.|Chúng ta sẽ trễ hạn trừ khi làm nhanh hơn.
+e: You can borrow my car as long as you drive carefully.|Bạn có thể mượn xe tôi miễn là lái cẩn thận.
+q: I won't go ___ you come with me.|if;unless;as long;provided not|1|"trừ khi" → unless.
+q: ___ you pay on time, there is no extra fee.|Unless;As long as;Except;Without|1|"miễn là" → as long as.
+q: Unless it ___ , we'll have lunch outside.|won't rain;rains;doesn't rain;will rain|1|Sau unless dùng khẳng định, hiện tại đơn.
+q: The deal is fine, ___ the price stays the same.|unless;provided that;except that;so that|1|"miễn là" → provided that.
+t: You'll fail ___ you study harder.|unless|unless = if ... not.
+t: I'll lend you the money as ___ as you pay me back.|long|as long as.
+t: You can stay here provided ___ you keep quiet.|that|provided that.
+s: Call me unless it's too late.|Hãy gọi tôi trừ khi đã quá muộn.
+s: It's fine as long as you're happy.|Ổn thôi, miễn là bạn vui.
+s: We can start the project provided that we get the budget.|Chúng ta có thể bắt đầu dự án miễn là có ngân sách.
+s: Unless we act now, prices will rise.|Nếu không hành động ngay, giá sẽ tăng.
+# futperf|B2|Tương lai hoàn thành|Future perfect|S + will have + V3  ·  by + thời điểm tương lai
+> Diễn tả việc sẽ hoàn thành trước một thời điểm trong tương lai: By Friday, I will have finished the report.
+> Thường đi với by + thời gian: by next year, by the time, by then.
+> Tương lai hoàn thành tiếp diễn (will have been + V-ing) nhấn mạnh khoảng thời gian: By June, I will have been working here for five years.
+= Tiếng Việt nói "trước thứ Sáu tôi sẽ làm xong"; tiếng Anh dùng will have + V3 để nói việc đã xong tại thời điểm đó.
+! By 2030 I will finish my degree. → By 2030 I will have finished my degree. — Có by + thời điểm tương lai → will have + V3.
+! By next month, she will have finish. → By next month, she will have finished. — Sau will have dùng V3.
+p: will have nói nhanh thành will've hoặc 'll have, đọc nhẹ; trọng âm rơi vào V3.|will have finished, will've gone, by then
+e: By the end of the year, we will have opened three new stores.|Đến cuối năm, chúng tôi sẽ mở được ba cửa hàng mới.
+e: By the time you arrive, the meeting will have started.|Khi bạn đến nơi thì cuộc họp đã bắt đầu rồi.
+q: By 2030, the company ___ its sales.|will double;will have doubled;has doubled;doubles|1|by + mốc tương lai → will have + V3.
+q: I ___ the report by tomorrow morning.|will have written;will write have;have written;am writing|0|Hoàn thành trước một mốc tương lai.
+q: By the time we get there, the film ___ .|will start;will have started;starts;has started|1|by the time → will have + V3.
+q: Next month, I ___ here for ten years.|will work;will have worked;work;am working|1|Mốc tương lai và khoảng thời gian → will have + V3.
+t: By Friday, we ___ (finish) the project.|will have finished|will have + V3.
+t: By the time she retires, she ___ (work) here for 30 years.|will have worked|will have + V3.
+t: ___ you have finished by six?|Will|Câu hỏi: Will + S + have + V3.
+s: I will have finished by five.|Tôi sẽ xong trước năm giờ.
+s: By then, prices will have gone up.|Đến lúc đó giá đã tăng rồi.
+s: We will have paid off the loan by next year.|Đến năm sau chúng tôi sẽ trả hết khoản vay.
+s: Will you have finished the report by Monday?|Bạn sẽ xong báo cáo trước thứ Hai chứ?
+# mixedcond|B2|Câu điều kiện hỗn hợp|Mixed conditionals|If + had + V3, would + V (hiện tại)  ·  If + quá khứ đơn, would have + V3
+> Hỗn hợp kiểu 1: điều kiện trái với quá khứ, kết quả trái với hiện tại. If I had studied finance, I would work in a bank now.
+> Hỗn hợp kiểu 2: điều kiện trái với hiện tại (đặc điểm lâu dài), kết quả trái với quá khứ. If I were more careful, I wouldn't have made that mistake.
+> Chú ý từ chỉ thời gian (now, today, yesterday) để biết mỗi vế đang nói về lúc nào.
+= Tiếng Việt chỉ nói "nếu ... thì ..." cho mọi thời; tiếng Anh dùng thì khác nhau cho mỗi vế tùy vế đó nói về quá khứ hay hiện tại.
+! If I had taken the job, I would have lived in Hanoi now. → If I had taken the job, I would live in Hanoi now. — Kết quả ở hiện tại (now) dùng would + V.
+! If she wasn't so shy, she would speak at yesterday's meeting. → If she wasn't so shy, she would have spoken at yesterday's meeting. — Kết quả ở quá khứ dùng would have + V3.
+p: would have nói nhanh thành would've; had trong mệnh đề if rút gọn thành 'd: If I'd known.|If I'd known, would've, I'd be
+e: If I had saved more money, I would be richer now.|Nếu ngày trước tôi tiết kiệm nhiều hơn, giờ tôi đã giàu hơn.
+e: If he spoke English, he would have got the job.|Nếu anh ấy nói được tiếng Anh, anh ấy đã có được công việc đó.
+q: If I had gone to bed earlier, I ___ so tired now.|wouldn't have been;wouldn't be;won't be;am not|1|Kết quả ở hiện tại → would + V.
+q: If she ___ afraid of flying, she would have come to Japan with us.|weren't;hadn't;isn't;won't be|0|Đặc điểm lâu dài ở hiện tại → quá khứ đơn (weren't).
+q: If we had invested in that company, we ___ rich today.|would have been;will be;would be;are|2|"today" → would + V.
+q: If I ___ the email, I would know the answer now.|read;had read;have read;would read|1|Điều kiện trong quá khứ → had + V3.
+t: If I had taken that job, I ___ (live) in Singapore now.|would live|Kết quả hiện tại → would + V.
+t: If he ___ (be) more organised, he wouldn't have missed the deadline.|were / was|Đặc điểm lâu dài → were hoặc was.
+t: If you had listened, you ___ (know) what to do now.|would know|Kết quả hiện tại → would + V.
+s: If I had studied harder, I would have a better job now.|Nếu ngày trước tôi học chăm hơn, giờ tôi đã có công việc tốt hơn.
+s: If I were you, I would have said no.|Nếu là bạn, tôi đã từ chối rồi.
+s: If we had left earlier, we would be there by now.|Nếu chúng ta đi sớm hơn, giờ đã tới nơi rồi.
+s: If she knew the answer, she would have told us.|Nếu cô ấy biết câu trả lời, cô ấy đã nói với chúng ta rồi.
+# nondefrel|B2|Mệnh đề quan hệ không xác định|Non-defining relative clauses|danh từ, who/which/whose/where + ..., phần còn lại của câu
+> Mệnh đề không xác định bổ sung thông tin thêm; bỏ đi thì câu vẫn đủ nghĩa. Luôn đặt giữa hai dấu phẩy.
+> Chỉ dùng who, which, whose, where, when; không dùng that và không được lược bỏ đại từ quan hệ.
+> which có thể thay cho cả mệnh đề phía trước: He was late, which annoyed everyone.
+= Tiếng Việt thường tách thành câu riêng; tiếng Anh dùng dấu phẩy và who hoặc which để nối vào câu chính.
+! My father, that is a doctor, works in Hue. → My father, who is a doctor, works in Hue. — Mệnh đề không xác định không dùng that.
+! He failed the exam what surprised everyone. → He failed the exam, which surprised everyone. — Thay cho cả mệnh đề dùng ", which".
+p: Khi nói, ngắt nhẹ ở hai dấu phẩy và hạ giọng phần mệnh đề phụ, như một lời nói thêm.|my manager, who, which surprised me
+e: Hanoi, which is the capital of Vietnam, has a long history.|Hà Nội, thủ đô của Việt Nam, có lịch sử lâu đời.
+e: Our CEO, whose speech was excellent, received a standing ovation.|Tổng giám đốc, người có bài phát biểu xuất sắc, được mọi người đứng dậy vỗ tay.
+q: My sister, ___ lives in Canada, is visiting us next week.|that;which;who;whom she|2|Người, mệnh đề không xác định → who.
+q: The project was finished early, ___ pleased the client.|that;what;which;who|2|Thay cho cả mệnh đề → which.
+q: Da Lat, ___ we spent our holiday, is famous for flowers.|which;where;that;when|1|Nơi chốn → where.
+q: Mr Tan, ___ company I work for, is very generous.|who;whose;which;that|1|Sở hữu → whose.
+t: The new phone, ___ costs $1,000, sold out in a day.|which|Vật → which.
+t: My boss, ___ is usually calm, got very angry.|who|Người → who.
+t: He didn't call me, ___ was strange.|which|Thay cho cả mệnh đề.
+s: My manager, who is very kind, helped me a lot.|Quản lý của tôi, người rất tốt bụng, đã giúp tôi rất nhiều.
+s: The report, which was due yesterday, is still not ready.|Bản báo cáo lẽ ra phải nộp hôm qua vẫn chưa xong.
+s: Prices went up, which surprised everyone.|Giá tăng, điều này khiến mọi người bất ngờ.
+s: We visited Hoi An, where my wife grew up.|Chúng tôi đến Hội An, nơi vợ tôi lớn lên.
+# reducedrel|B2|Rút gọn mệnh đề quan hệ|Reduced relative clauses|danh từ + V-ing (chủ động)  ·  danh từ + V3 (bị động)  ·  the first/only + to V
+> Mệnh đề quan hệ chủ động rút thành V-ing: The man who is standing there → The man standing there.
+> Mệnh đề quan hệ bị động rút thành V3: The cars which are made in Japan → The cars made in Japan.
+> Sau the first, the last, the only có thể rút thành to V: She was the first person to arrive.
+= Tiếng Việt cũng hay nói gọn ("người đứng ở đó", "xe sản xuất tại Nhật"); tiếng Anh rút gọn tương tự bằng V-ing hoặc V3.
+! The products making in this factory are exported. → The products made in this factory are exported. — Sản phẩm được làm ra → bị động → V3.
+! The woman worked at the bank is my aunt. → The woman working at the bank is my aunt. — Người tự làm việc → chủ động → V-ing.
+p: Cụm rút gọn được đọc liền với danh từ đứng trước, không ngắt giọng: the man standing there.|standing there, made in Vietnam, the first to arrive
+e: Most of the goods sold in this shop are imported.|Phần lớn hàng hóa bán ở cửa hàng này là hàng nhập khẩu.
+e: Anyone wanting to join should contact me.|Ai muốn tham gia hãy liên hệ tôi.
+q: The man ___ to the manager is our new client.|talks;talking;talked;is talking|1|Chủ động → V-ing.
+q: The report ___ last week contains several mistakes.|writing;written;wrote;to write|1|Báo cáo được viết → V3.
+q: She was the only person ___ the problem.|notice;noticing;to notice;noticed|2|Sau the only → to V.
+q: Cars ___ in Germany are often expensive.|making;made;make;are made|1|Bị động → V3.
+t: The people ___ (live) next door are very noisy.|living|Chủ động → V-ing.
+t: The money ___ (spend) on marketing was too high.|spent|Bị động → V3.
+t: He was the first person ___ (arrive).|to arrive|the first + to V.
+s: The woman sitting next to me is a lawyer.|Người phụ nữ ngồi cạnh tôi là luật sư.
+s: Most products made here are exported.|Phần lớn sản phẩm làm ở đây được xuất khẩu.
+s: Anyone interested in the job should apply.|Ai quan tâm đến công việc này hãy nộp đơn.
+s: She was the last person to leave.|Cô ấy là người cuối cùng ra về.
+# passive3|B2|Bị động nâng cao: It is said that|Impersonal passive|It is said / believed / reported that + mệnh đề  ·  S + is said to + V
+> Dùng khi nêu ý kiến hoặc tin tức chung mà không nói rõ ai nói: It is believed that prices will rise.
+> Cách thứ hai đưa chủ ngữ lên đầu: Prices are expected to rise. Với việc đã xảy ra: He is said to have left the country.
+> Các động từ hay dùng: say, believe, think, report, expect, know, consider. Rất hữu ích cho IELTS Writing.
+= Tiếng Việt nói "Người ta nói rằng ..."; tiếng Anh trang trọng hơn dùng It is said that ... thay vì People say that.
+! It is said the president will to visit Hanoi. → The president is said to be visiting Hanoi. — Cách có chủ ngữ dùng is said to + V, không trộn hai cách.
+! He is believed to steal the money last year. → He is believed to have stolen the money last year. — Việc trong quá khứ dùng to have + V3.
+p: It is said that đọc liền; said đọc /sed/. believed nhấn âm thứ hai /bɪˈliːvd/.|it is said that, is believed to, is expected to
+e: It is expected that inflation will fall next year.|Người ta dự báo lạm phát sẽ giảm vào năm sau.
+e: The company is reported to be planning job cuts.|Theo tin tức, công ty đang lên kế hoạch cắt giảm việc làm.
+q: It ___ that the new airport will open in 2027.|says;is said;said;is saying|1|It is said that + mệnh đề.
+q: The CEO is believed ___ the company next month.|leaves;to leave;leaving;to have left|1|Việc ở hiện tại hoặc tương lai → to + V.
+q: The painting is thought ___ in the 18th century.|to paint;to have been painted;painting;to be paint|1|Việc bị động trong quá khứ → to have been + V3.
+q: ___ is widely believed that education reduces poverty.|There;It;This;That|1|Cấu trúc It is believed that.
+t: It is ___ (report) that sales have fallen.|reported|It is reported that.
+t: The minister is expected ___ resign.|to|be expected to + V.
+t: She is said to ___ (make) a fortune in real estate last year.|have made|Việc trong quá khứ → to have + V3.
+s: It is said that he is very rich.|Người ta nói rằng anh ấy rất giàu.
+s: Prices are expected to rise.|Giá được dự báo sẽ tăng.
+s: It is believed that exercise improves memory.|Người ta tin rằng tập thể dục giúp cải thiện trí nhớ.
+s: The company is thought to have lost money.|Người ta cho rằng công ty đã thua lỗ.
+# causative|B2|Have something done|Causative: have / get something done|have / get + vật + V3  ·  have + người + V  ·  get + người + to V
+> have/get something done: nhờ hoặc thuê người khác làm việc gì cho mình. I had my car repaired.
+> have someone do something và get someone to do something: bảo ai đó làm gì. I had my assistant book a room.
+> Cũng dùng cho việc không may xảy ra với mình: She had her phone stolen.
+= Tiếng Việt nói "Tôi đi cắt tóc" dù người khác cắt; tiếng Anh phải nói I had my hair cut, vì I cut my hair nghĩa là tự cắt.
+! I cut my hair yesterday at the salon. → I had my hair cut yesterday at the salon. — Người khác cắt cho mình → have something done.
+! I had my laptop repair. → I had my laptop repaired. — Sau tân ngữ dùng V3.
+p: Trọng âm rơi vào vật và V3: I had my CAR REPAIRED. had ở giữa câu đọc nhẹ /həd/.|had my hair cut, get it fixed, have it checked
+e: We are having the office painted next week.|Tuần sau chúng tôi cho sơn lại văn phòng.
+e: I'll get my assistant to send you the contract.|Tôi sẽ bảo trợ lý gửi hợp đồng cho bạn.
+q: I need to have my eyes ___ .|test;tested;testing;to test|1|have + vật + V3.
+q: She got her brother ___ her move house.|help;helped;to help;helping|2|get + người + to V.
+q: We had the manager ___ the documents.|sign;signed;to sign;signing|0|have + người + V nguyên mẫu.
+q: He ___ his wallet stolen on the bus.|had;made;let;took|0|Việc không may xảy ra → had + vật + V3.
+t: I'm going to have my car ___ (wash).|washed|have + vật + V3.
+t: Where did you get your hair ___ (cut)?|cut|cut – cut – cut.
+t: I'll get the technician ___ (check) the printer.|to check|get + người + to V.
+s: I had my phone repaired.|Tôi đã mang điện thoại đi sửa.
+s: We need to get the contract checked.|Chúng ta cần cho kiểm tra hợp đồng.
+s: She had her bag stolen.|Cô ấy bị lấy cắp túi.
+s: I'll have someone call you back.|Tôi sẽ bảo người gọi lại cho bạn.
+# cleft|B2|Câu chẻ: It is ... that|Cleft sentences|It is/was + phần nhấn mạnh + that/who + phần còn lại  ·  What + S + V + is ...
+> Câu chẻ nhấn mạnh một phần của câu. Câu gốc: Nam broke the window. Nhấn mạnh người: It was Nam who broke the window.
+> Nhấn mạnh thời gian hoặc nơi chốn: It was in 2020 that we met.
+> Cấu trúc với What: What I need is a holiday. What surprised me was the price.
+= Tiếng Việt nhấn mạnh bằng "chính", "chính là"; tiếng Anh dùng It is ... that hoặc What ... is.
+! It was him that he called me. → It was him who called me. — Không lặp lại chủ ngữ sau that hoặc who.
+! What I need it is more time. → What I need is more time. — Không thêm it.
+p: Nhấn và lên giọng ở phần được tách ra: It was NAM who called. What I NEED is SLEEP.|It was Nam who, What I need is
+e: It was the price that worried our customers.|Chính giá cả là điều khiến khách hàng lo lắng.
+e: What we need is a clear plan.|Điều chúng ta cần là một kế hoạch rõ ràng.
+q: ___ was my manager who suggested the idea.|This;It;What;That|1|Câu chẻ bắt đầu bằng It.
+q: It was in Da Nang ___ we first met.|which;that;what;who|1|Nhấn mạnh nơi chốn → that.
+q: ___ I like about this job is the people.|That;Which;What;It|2|What + S + V + is ...
+q: It is the quality, not the price, ___ matters most.|what;who;that;where|2|Nhấn mạnh vật → that.
+t: It ___ my sister who called you yesterday.|was|Quá khứ → It was.
+t: ___ I really want is a quiet weekend.|What|What + S + V + is.
+t: It was in 2019 ___ the company was founded.|that|It was + thời gian + that.
+s: It was my boss who called.|Chính sếp tôi đã gọi.
+s: What I need is a break.|Điều tôi cần là được nghỉ ngơi.
+s: It is the service that makes customers return.|Chính dịch vụ là thứ khiến khách hàng quay lại.
+s: What surprised me was the price.|Điều làm tôi bất ngờ là giá cả.
+# ratherbetter|B2|Would rather, had better|Would rather and had better|would rather + V (than + V)  ·  would rather + S + quá khứ  ·  had better (not) + V
+> would rather + V nguyên mẫu: thích làm gì hơn. I'd rather stay at home than go out.
+> would rather + người khác + quá khứ đơn: muốn người khác làm gì. I'd rather you didn't smoke here.
+> had better + V nguyên mẫu: tốt nhất là nên (thường kèm ý cảnh báo). You'd better leave now or you'll miss the bus.
+= Tiếng Việt nói "tôi thà ... còn hơn", "tốt nhất là"; tiếng Anh không dùng to sau would rather và had better.
+! I would rather to walk. → I would rather walk. — Sau would rather không có to.
+! You had better to hurry. → You had better hurry. — Sau had better không có to.
+p: Cả hai đều rút gọn thành 'd: I'd rather, you'd better. Âm 'd rất nhẹ, khi nói nhanh gần như không nghe thấy.|I'd rather, you'd better, we'd better not
+e: I'd rather work from home than commute for two hours.|Tôi thà làm ở nhà còn hơn đi lại hai tiếng.
+e: We'd better check the figures again before we send them.|Tốt nhất là chúng ta nên kiểm tra lại số liệu trước khi gửi.
+q: I'd rather ___ tea, please.|have;to have;having;had|0|would rather + V nguyên mẫu.
+q: You'd better ___ late again, or the boss will be angry.|not be;don't be;not to be;be not|0|had better not + V.
+q: I'd rather you ___ tell anyone about this.|don't;didn't;won't;not|1|would rather + người + quá khứ đơn.
+q: It's going to rain. We ___ take an umbrella.|would rather;had better;have better;would better|1|Lời khuyên kèm cảnh báo → had better.
+t: I'd rather ___ (stay) here than go out.|stay|would rather + V.
+t: You'd ___ see a doctor about that cough.|better|had better.
+t: I'd rather you ___ (come) a bit earlier tomorrow.|came|would rather + người + quá khứ đơn.
+s: I'd rather stay at home tonight.|Tối nay tôi thích ở nhà hơn.
+s: You'd better hurry up.|Bạn nên nhanh lên.
+s: We'd better not be late.|Tốt nhất là chúng ta đừng đến muộn.
+s: I'd rather you didn't tell her.|Tôi mong bạn đừng nói với cô ấy.
+# beusedto|B2|Used to, be used to, get used to|Used to vs be used to vs get used to|used to + V  ·  be used to + V-ing/danh từ  ·  get used to + V-ing/danh từ
+> used to + V nguyên mẫu: thói quen trong quá khứ, nay không còn. I used to smoke.
+> be used to + V-ing hoặc danh từ: đã quen với việc gì. I'm used to working late.
+> get used to + V-ing hoặc danh từ: dần quen với việc gì. You'll get used to the noise.
+= Tiếng Việt nói "từng làm", "đã quen với"; chỗ dễ nhầm là sau be used to và get used to phải dùng V-ing, vì to ở đây là giới từ.
+! I am used to work at night. → I am used to working at night. — Sau be used to dùng V-ing.
+! She used to living in Hanoi. → She used to live in Hanoi. — Thói quen trong quá khứ: used to + V nguyên mẫu.
+p: Cả ba cấu trúc đều đọc used to là /ˈjuːstə/ với âm /s/, không phải /z/.|used to, I'm used to it, get used to
+e: I'm used to working under pressure.|Tôi đã quen làm việc dưới áp lực.
+e: It took me a year to get used to the cold weather.|Tôi mất một năm để quen với thời tiết lạnh.
+q: I ___ live in Da Nang, but now I live in Hanoi.|am used to;used to;get used to;was used to|1|Thói quen trong quá khứ → used to + V.
+q: She is used to ___ early.|get up;getting up;got up;gets up|1|be used to + V-ing.
+q: Don't worry, you'll soon get used to ___ English every day.|speak;speaking;spoke;to speak|1|get used to + V-ing.
+q: I'm not used ___ such hot weather.|with;at;to;for|2|be used to + danh từ.
+t: He is used to ___ (drive) on the left.|driving|be used to + V-ing.
+t: We ___ go to the cinema every Friday when we were students.|used to|Thói quen trong quá khứ.
+t: It's hard to get used to ___ (wear) a uniform.|wearing|get used to + V-ing.
+s: I'm used to the noise now.|Giờ tôi đã quen với tiếng ồn.
+s: You'll get used to it.|Rồi bạn sẽ quen thôi.
+s: I used to work in a factory.|Tôi từng làm việc trong một nhà máy.
+s: She isn't used to working at night.|Cô ấy chưa quen làm việc ban đêm.
+# verbprep|B2|Động từ đi với giới từ|Verbs with prepositions|động từ + giới từ cố định + danh từ / V-ing
+> Nhiều động từ luôn đi với một giới từ cố định: depend on, consist of, apply for, deal with, insist on, rely on, focus on.
+> Sau giới từ, động từ phải ở dạng V-ing: She insisted on paying.
+> Một số động từ đổi nghĩa theo giới từ: apply for (xin, nộp đơn xin) và apply to (áp dụng cho, nộp vào nơi nào).
+= Tiếng Việt dùng "vào" cho nhiều động từ ("phụ thuộc vào", "tập trung vào"); tiếng Anh mỗi động từ một giới từ riêng nên phải học thuộc theo cặp.
+! It depends of the price. → It depends on the price. — depend đi với on.
+! I'm looking forward to see you. → I'm looking forward to seeing you. — Sau giới từ to dùng V-ing.
+p: Giới từ thường đọc nhẹ và nối với từ sau: depend on it, focus on it.|depend on, consist of, apply for
+e: The team consists of five engineers.|Nhóm gồm năm kỹ sư.
+e: We need to focus on our main customers.|Chúng ta cần tập trung vào khách hàng chính.
+q: Our success depends ___ teamwork.|of;on;in;at|1|depend on.
+q: She applied ___ a job at the bank.|to;for;at;in|1|apply for a job.
+q: He insisted ___ paying for dinner.|to;on;in;for|1|insist on + V-ing.
+q: Who will deal ___ customer complaints?|about;with;for;at|1|deal with.
+t: The course consists ___ ten lessons.|of|consist of.
+t: You can rely ___ me.|on|rely on.
+t: I'm thinking ___ changing my job.|of / about|think of/about + V-ing.
+s: It depends on the weather.|Điều đó tùy thuộc vào thời tiết.
+s: I'm looking forward to meeting you.|Tôi mong được gặp bạn.
+s: We need to deal with this problem.|Chúng ta cần giải quyết vấn đề này.
+s: She applied for a loan.|Cô ấy đã nộp đơn vay vốn.
+# perfgerund|B2|Danh động từ và phân từ hoàn thành|Perfect gerunds and participles|having + V3  ·  Having + V3, mệnh đề chính
+> having + V3 nhấn mạnh việc đã xảy ra trước: He denied having taken the money.
+> Đầu câu, Having + V3 thay cho mệnh đề After hoặc Because: Having finished the report, she went home.
+> Hai vế phải có cùng chủ ngữ. Dạng bị động: having been + V3.
+= Tiếng Việt nói "Làm xong việc, cô ấy về nhà" với chủ ngữ ngầm hiểu; tiếng Anh rút gọn bằng Having + V3, nhưng chủ ngữ hai vế phải là một.
+! Having finished the work, the office was closed. → Having finished the work, we closed the office. — Hai vế phải cùng chủ ngữ là người làm xong việc.
+! He admitted to have made a mistake. → He admitted having made a mistake. — admit đi với V-ing hoặc having + V3.
+p: having đọc /ˈhævɪŋ/ với âm /æ/ mở rộng; ngắt nhẹ ở dấu phẩy sau cụm Having + V3.|having finished, having been told, having lived
+e: Having lived abroad for years, she speaks three languages.|Sống ở nước ngoài nhiều năm nên cô ấy nói được ba thứ tiếng.
+e: He regrets having left university early.|Anh ấy hối hận vì đã bỏ đại học sớm.
+q: ___ the email, he called the client.|Having read;Have read;Had read;Having reading|0|Having + V3.
+q: She denied ___ the documents.|to lose;having lost;have lost;lost|1|deny + having + V3.
+q: ___ by the manager, the plan was sent to the board.|Having approved;Having been approved;Approve;Had approved|1|Kế hoạch được duyệt → bị động: having been + V3.
+q: ___ all his money, he had to borrow from friends.|Spend;Having spent;Spent;Had spent|1|Việc xảy ra trước → Having + V3.
+t: ___ (finish) the meeting, we went for lunch.|Having finished|Having + V3.
+t: He admitted ___ (make) a mistake.|having made / making|admit + having + V3 hoặc V-ing.
+t: Having ___ (tell) the news, she started crying.|been told|Bị động: having been + V3.
+s: Having finished the report, I went home.|Làm xong báo cáo, tôi về nhà.
+s: He regrets having said that.|Anh ấy hối hận vì đã nói điều đó.
+s: Having worked here for years, she knows everyone.|Làm việc ở đây nhiều năm nên cô ấy quen biết mọi người.
+s: I don't remember having met him.|Tôi không nhớ đã từng gặp anh ấy.
+# reportverbs|B2|Câu tường thuật với động từ đặc biệt|Reporting verbs|promise/refuse/offer + to V  ·  advise/warn/remind + O + to V  ·  suggest/deny/admit + V-ing
+> Thay vì say và tell, dùng động từ cho biết ý của người nói: promise, refuse, offer, agree + to V.
+> advise, remind, warn, encourage, ask + người + to V: She reminded me to call the bank.
+> suggest, recommend, deny, admit + V-ing hoặc that; apologise for, insist on, accuse someone of + V-ing.
+= Tiếng Việt chỉ cần "anh ấy khuyên tôi nên ..."; tiếng Anh phải chọn đúng mẫu theo sau từng động từ: to V, V-ing hay that.
+! She suggested me to take a break. → She suggested that I take a break. — suggest không đi với người + to V.
+! He apologised to be late. → He apologised for being late. — apologise for + V-ing.
+p: Trọng âm của các động từ tường thuật: adVISE, sugGEST, recomMEND, aPOLogise. advise /ədˈvaɪz/ khác advice /ədˈvaɪs/.|advise, suggest, recommend, apologise
+e: The doctor advised me to rest for a week.|Bác sĩ khuyên tôi nghỉ ngơi một tuần.
+e: He denied taking the money.|Anh ấy phủ nhận việc lấy tiền.
+q: She promised ___ me the report by Monday.|send;to send;sending;sent|1|promise + to V.
+q: He suggested ___ the meeting to Friday.|to move;moving;move;moved|1|suggest + V-ing.
+q: The manager warned us ___ late again.|not to be;not being;don't be;to not being|0|warn + O + not to V.
+q: She apologised ___ the mistake.|about;for;of;to|1|apologise for.
+t: He refused ___ (sign) the contract.|to sign|refuse + to V.
+t: They accused him ___ lying.|of|accuse someone of + V-ing.
+t: My teacher encouraged me ___ (apply) for the scholarship.|to apply|encourage + O + to V.
+s: She advised me to save money.|Cô ấy khuyên tôi tiết kiệm tiền.
+s: He offered to drive me home.|Anh ấy đề nghị chở tôi về nhà.
+s: I suggest taking a short break.|Tôi đề nghị nghỉ giải lao một chút.
+s: They denied making any mistakes.|Họ phủ nhận đã mắc bất kỳ lỗi nào.
+# cause|B2|Từ nối chỉ nguyên nhân và kết quả|Linking words: cause and result|because of / due to / owing to + danh từ  ·  as / since + mệnh đề  ·  Therefore / Consequently / As a result
+> Nguyên nhân là danh từ: because of, due to, owing to. Nguyên nhân là mệnh đề: because, as, since.
+> Kết quả đứng đầu câu mới: Therefore, Consequently, As a result, Thus, theo sau là dấu phẩy.
+> so ... that và such ... that nối nguyên nhân với kết quả trong cùng một câu.
+= Tiếng Việt dùng cặp "vì ... nên ..." trong một câu; tiếng Anh chỉ dùng một từ nối và phải chọn loại đi với danh từ hay với mệnh đề.
+! Due to it rained, the match was cancelled. → Due to the rain, the match was cancelled. — due to đi với danh từ.
+! Because the high cost, we stopped the project. → Because of the high cost, we stopped the project. — Trước danh từ cần because of.
+p: Trọng âm: CONsequently, THEREfore. Ngắt giọng sau từ nối đứng đầu câu.|consequently, therefore, as a result
+e: Owing to rising costs, prices will increase next month.|Do chi phí tăng, giá sẽ tăng vào tháng tới.
+e: Sales fell sharply. Consequently, the company cut jobs.|Doanh số giảm mạnh. Hệ quả là công ty cắt giảm nhân sự.
+q: The flight was delayed ___ fog.|because;due to;since;therefore|1|Danh từ → due to.
+q: ___ the manager was ill, the meeting was postponed.|Because of;Due to;As;Owing to|2|Mệnh đề → As.
+q: Demand increased. ___, prices went up.|Because;Due to;As a result;Since|2|Kết quả ở đầu câu mới → As a result.
+q: The company invested heavily in training; ___, productivity improved.|because;therefore;owing to;since|1|Kết quả → therefore.
+t: The event was cancelled because ___ the storm.|of|because of + danh từ.
+t: ___ we had no time, we took a taxi.|Since / As / Because|Mệnh đề nguyên nhân.
+t: Costs rose. ___, profits fell. (hệ quả là)|Consequently / As a result / Therefore|Kết quả đứng đầu câu.
+s: The match was cancelled due to the rain.|Trận đấu bị hủy do trời mưa.
+s: As it was late, we went home.|Vì đã muộn nên chúng tôi về nhà.
+s: Sales fell. As a result, we cut costs.|Doanh số giảm. Vì vậy chúng tôi cắt giảm chi phí.
+s: Owing to the strike, there were no trains.|Do đình công, không có chuyến tàu nào.
+# emphdo|B2|Nhấn mạnh với do, does, did|Emphatic do|S + do / does / did + V nguyên mẫu
+> Thêm do, does, did trước động từ chính để nhấn mạnh, phản bác hoặc xác nhận: I did call you!
+> Dùng khi người khác nghi ngờ, hoặc khi muốn tỏ ra chân thành: I do appreciate your help.
+> Trong câu mệnh lệnh, Do + V làm lời mời nhiệt tình hơn: Do sit down.
+= Tiếng Việt nhấn mạnh bằng "có", "thật sự", "đúng là" ("Tôi có gọi mà!"); tiếng Anh dùng do, does, did và nhấn giọng vào từ đó.
+! I did called you yesterday. → I did call you yesterday. — Sau did dùng V nguyên mẫu.
+! She does likes her job. → She does like her job. — Sau does không thêm -s.
+p: Luôn nhấn giọng mạnh vào do, does, did trong câu nhấn mạnh: I DID call you. She DOES like it.|I did call, she does like, do sit down
+e: I do understand your concerns.|Tôi thật sự hiểu những lo lắng của bạn.
+e: He did send the email, but it went to spam.|Anh ấy có gửi email, nhưng nó vào thư rác.
+q: "You didn't lock the door." "I ___ lock it!"|do;did;does;was|1|Phản bác về quá khứ → did.
+q: She ___ work hard, even if she doesn't show it.|do;does;did;is|1|Hiện tại, she → does.
+q: I did ___ my homework, teacher.|finished;finish;finishing;to finish|1|Sau did → V nguyên mẫu.
+q: We ___ appreciate your patience.|does;do;did;are|1|we → do.
+t: I ___ like your idea, but it's too expensive. (nhấn mạnh, hiện tại)|do|I do + V.
+t: He ___ apologise, but she didn't listen. (nhấn mạnh, quá khứ)|did|did + V.
+t: ___ come in and have a seat.|Do|Do + V: lời mời nhiệt tình.
+s: I did call you yesterday.|Hôm qua tôi có gọi bạn mà.
+s: I do appreciate your help.|Tôi thật sự cảm kích sự giúp đỡ của bạn.
+s: She does work very hard.|Cô ấy đúng là làm việc rất chăm chỉ.
+s: Do take care of yourself.|Hãy giữ gìn sức khỏe nhé.
+# subjunctive|B2|Thức giả định|The subjunctive|suggest / recommend / insist / demand + that + S + V nguyên mẫu  ·  It is essential that + S + V
+> Sau suggest, recommend, insist, demand, request, propose + that, động từ để nguyên mẫu với mọi chủ ngữ: I suggest that he call the client.
+> Sau It is essential / important / necessary / vital that cũng dùng V nguyên mẫu.
+> Phủ định thêm not trước động từ: It is important that he not be late. Anh-Anh thường dùng should + V thay thế.
+= Tiếng Việt không đổi động từ; tiếng Anh ở đây dùng V nguyên mẫu (không thêm -s, không đổi thì) dù chủ ngữ là he, she hay it. Dùng đúng cấu trúc này là điểm cộng cho IELTS Writing.
+! The manager insisted that she arrives early. → The manager insisted that she arrive early. — Thức giả định dùng V nguyên mẫu.
+! It is essential that every student is present. → It is essential that every student be present. — Dùng be cho mọi chủ ngữ.
+p: Vì động từ không có đuôi -s nên câu nghe như "sai"; đó chính là đặc điểm của thức giả định trang trọng.|insist that he be, suggest that she call, it is vital that
+e: The doctor recommended that he take a week off.|Bác sĩ khuyên anh ấy nghỉ một tuần.
+e: It is vital that the report be accurate.|Điều tối quan trọng là bản báo cáo phải chính xác.
+q: I suggest that he ___ a lawyer.|contacts;contact;contacted;will contact|1|suggest that + S + V nguyên mẫu.
+q: It is essential that she ___ on time.|is;be;was;will be|1|It is essential that + S + be.
+q: They demanded that the company ___ the money.|returns;return;returned;returning|1|demand that + S + V nguyên mẫu.
+q: It is important that he ___ late.|not be;isn't;doesn't be;not is|0|Phủ định: not + V nguyên mẫu.
+t: The manager requested that everyone ___ (attend) the meeting.|attend|request that + S + V nguyên mẫu.
+t: It is necessary that the contract ___ (be) signed today.|be|Thức giả định với be.
+t: I recommend that she ___ (apply) for the position.|apply|recommend that + S + V nguyên mẫu.
+s: I suggest that he call the client.|Tôi đề nghị anh ấy gọi cho khách hàng.
+s: It is important that you be honest.|Điều quan trọng là bạn phải trung thực.
+s: She insisted that we stay for dinner.|Cô ấy nài chúng tôi ở lại ăn tối.
+s: They recommended that the plan be changed.|Họ đề nghị thay đổi kế hoạch.
 `
 export const GRAMMAR = parseUnits(RAW, 'g')
 
@@ -1086,10 +1653,6 @@ export const GRAMMAR = parseUnits(RAW, 'g')
 export const PLANNED: Record<Level, string[]> = {
   A1: [],
   A2: [],
-  B1: ['Tương lai tiếp diễn', 'So, such', 'Both, either, neither',
-    'Mạo từ nâng cao', 'Be able to, manage to', 'Make, let, allow', 'Cụm động từ thông dụng', 'Mệnh đề chỉ mục đích',
-     'Tính từ đuôi -ed và -ing', 'Câu bị động với hai tân ngữ', 'Unless, as long as, provided'],
-  B2: ['Tương lai hoàn thành', 'Câu điều kiện hỗn hợp', 'Mệnh đề quan hệ không xác định', 'Rút gọn mệnh đề quan hệ', 'Bị động nâng cao: It is said that',
-    'Have something done', 'Câu chẻ: It is ... that', 'Would rather, had better', 'Used to, be used to, get used to', 'Động từ + giới từ', 'Danh động từ hoàn thành',
-    'Câu tường thuật với động từ đặc biệt', 'Từ nối nâng cao', 'Nhấn mạnh với do, does, did', 'Thức giả định'],
+  B1: [],
+  B2: [],
 }

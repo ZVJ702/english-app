@@ -11,8 +11,8 @@ export function Mcq({ ex, done, onAnswer }: Props) {
   const [pick, setPick] = useState(-1)
   return (
     <>
-      <p className="prompt wide">{ex.q}</p>
-      <div className="opts">
+      <p className={`prompt wide ${ex.kind === 'pick' ? 'small-q' : ''}`}>{ex.q}</p>
+      <div className={`opts ${ex.kind === 'pick' ? 'pick' : ''}`}>
         {ex.opts.map((o, i) => (
           <button key={i} disabled={done} className={done ? (i === ex.a ? 'right' : i === pick ? 'wrong' : '') : ''}
             onClick={() => { setPick(i); onAnswer({ ok: i === ex.a, given: o }) }}>{o}</button>

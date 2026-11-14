@@ -339,3 +339,16 @@ button.word-head:active:not(:disabled) { transform: none; box-shadow: none; }
 .word-body { padding: 0 16px 12px; }
 .card.vocab-test form .grades button { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .card.vocab-test > button.ghost.line { display: block; width: 100%; text-align: center; margin-top: 4px; }
+
+/* ===== Đợt 2: kiểm tra nhanh, xem lại bài ===== */
+.topic-card .choice { display: flex; flex-direction: column; gap: 10px; }
+.topic-card .choice button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; }
+.topic-card.center h2 { justify-content: center; display: flex; margin-top: 6px; }
+.prompt.small-q { font-size: 1rem; color: var(--muted); }
+.opts.pick button { font-size: 1.08rem; line-height: 1.35; padding: 12px 14px; }
+.sheet-wrap { position: fixed; inset: 0; z-index: 20; background: rgba(15, 12, 30, .55); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s ease; }
+.sheet { width: 100%; max-width: 560px; max-height: 88vh; overflow: auto; border-radius: 24px 24px 0 0; padding-top: 22px; position: relative; animation: rise .28s cubic-bezier(.2, .8, .2, 1); }
+.sheet .close { position: absolute; top: 8px; right: 8px; font-size: 1.2rem; color: var(--muted); }
+.sheet > .primary { width: 100%; position: sticky; bottom: 0; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
