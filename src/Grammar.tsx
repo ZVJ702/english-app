@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { GRAMMAR, PLANNED, type Topic } from './data/grammar'
-import { DOMAINS, PHRASES } from './data/phrases'
 import { useStore } from './store'
 import { speak } from './util'
 import { L, Page } from './ui'
@@ -8,7 +7,6 @@ import { BuddySays } from './Buddy'
 
 /** Nội dung một bài: công thức, giải thích, so sánh với tiếng Việt, lỗi hay gặp, ví dụ. Dùng ở thư viện và trong phiên học. */
 export function Lesson({ t }: { t: Topic }) {
-  const phrases = t.exercises.filter((e) => e.vi)
   return (
     <>
       <h2 className="lesson-title">{t.vi}<small>{t.en}</small></h2>
@@ -36,12 +34,6 @@ export function Lesson({ t }: { t: Topic }) {
           <span className="muted small">{vi}</span>
         </p>
       ))}
-      {t.notes.length === 0 && phrases.map((e) => (
-        <p key={e.id} className="ex">
-          <b>{e.q}</b> <button className="ghost" onClick={() => speak(e.q)} aria-label="Nghe · Listen">🔊</button>
-          <span className="muted small">{e.vi}</span>
-        </p>
-      ))}
     </>
   )
 }
@@ -52,35 +44,20 @@ function Row({ t, onOpen }: { t: Topic; onOpen: () => void }) {
   const full = done === t.exercises.length
   return (
     <button className="card row feature" onClick={onOpen}>
-      <span className={`icon ${full ? 'full' : ''}`}>{full ? '✓' : t.domain ? '💬' : '📘'}</span>
+      <span className={`icon ${full ? 'full' : ''}`}>{full ? '✓' : '📘'}</span>
       <span><b>{t.vi}</b><span className="muted small">{t.en} · {done}/{t.exercises.length} bài tập</span></span>
       <span className="chev">›</span>
     </button>
   )
 }
 
-export function Library({ mode, onBack, onPractice }: { mode: 'grammar' | 'phrases'; onBack: () => void; onPractice?: () => void }) {
+export function Library({ onBack }: { onBack: () => void }) {
   const [open, setOpen] = useState<Topic | null>(null)
   if (open) {
     return (
-      <Page title={mode === 'grammar' ? <L vi="Bài ngữ pháp" en="Grammar lesson" /> : <L vi="Mẫu câu" en="Phrases" />} onBack={() => setOpen(null)}>
-        <section className="card lesson"><span className="tag write">{open.domain ? '💬' : '📘'} {open.level}</span><Lesson t={open} /></section>
-        <p className="muted small center">{mode === 'grammar' ? 'Bài tập của chủ đề này nằm trong phiên "Học ngữ pháp" và được ôn lại theo lịch.' : 'Bài tập của tình huống này nằm trong phiên "Luyện mẫu câu".'}</p>
-      </Page>
-    )
-  }
-  if (mode === 'phrases') {
-    return (
-      <Page title={<L vi="Giao tiếp" en="Conversation" />} onBack={onBack}>
-        <BuddySays mood="wave" size={84} en="Useful phrases!" vi="Mẫu câu theo tình huống. Bấm vào một tình huống để đọc, hoặc luyện ghép câu bên dưới." />
-        {onPractice && <button className="primary" onClick={onPractice}><L vi="Luyện mẫu câu 15 phút" en="Practise phrases" /></button>}
-        {Object.entries(DOMAINS).map(([id, name]) => (
-          <div key={id} className="group">
-            <h2 className="sec">{name}</h2>
-            {PHRASES.filter((t) => t.domain === id).map((t) => <Row key={t.id} t={t} onOpen={() => setOpen(t)} />)}
-          </div>
-        ))}
-        <p className="muted small center">Các tình huống khác sẽ được thêm dần.</p>
+      <Page title={<L vi="Bài ngữ pháp" en="Grammar lesson" />} onBack={() => setOpen(null)}>
+        <section className="card lesson"><span className="tag write">📘 {open.level}</span><Lesson t={open} /></section>
+        <p className="muted small center">Bài tập của chủ đề này nằm trong phiên "Học ngữ pháp" và được ôn lại theo lịch.</p>
       </Page>
     )
   }

@@ -16,7 +16,7 @@ export interface Topic {
   notes: string[]; compare: string[]; mistakes: [string, string, string][]; sounds: [string, string[]][]; examples: [string, string][]; exercises: Exercise[]
 }
 
-/** Đọc khối văn bản thành danh sách chủ đề. prefix là tiền tố mã thẻ ("g" cho ngữ pháp, "p" cho mẫu câu). */
+/** Đọc khối văn bản thành danh sách chủ đề. prefix là tiền tố mã thẻ ("g" cho ngữ pháp). */
 export function parseUnits(raw: string, prefix: string): Topic[] {
   const out: Topic[] = []
   const count = { q: 0, t: 0, s: 0 }

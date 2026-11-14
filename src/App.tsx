@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { GRAMMAR } from './data/grammar'
-import { PHRASES } from './data/phrases'
-import { GRAMMAR_EXERCISES } from './data/units'
+import { EXERCISES as GRAMMAR_EXERCISES } from './data/units'
 import { Library } from './Grammar'
 import { countDue, known, Session, type Mode } from './Session'
 import { Decks } from './Decks'
@@ -11,7 +10,7 @@ import { streaks, syncNow, syncReady, today, useStore } from './store'
 import { L, Ring } from './ui'
 import { Buddy } from './Buddy'
 
-type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' }
+type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
@@ -42,8 +41,7 @@ export default function App() {
   }, [])
 
   if (view.name === 'session') return <Session mode={view.mode} minutes={view.minutes} onExit={home} />
-  if (view.name === 'grammar') return <Library mode="grammar" onBack={home} />
-  if (view.name === 'phrases') return <Library mode="phrases" onBack={home} onPractice={() => setView({ name: 'session', mode: 'phrases', minutes: 15 })} />
+  if (view.name === 'grammar') return <Library onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} />
 
@@ -119,7 +117,6 @@ export default function App() {
 
       <div className="tiles">
         <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
-        <button className="tile t3" onClick={() => setView({ name: 'phrases' })}><span className="icon">💬</span><b>Giao tiếp</b><small>{PHRASES.length} tình huống</small></button>
         <button className="tile t1" onClick={() => setView({ name: 'decks' })}><span className="icon">🗂️</span><b>Bộ từ</b><small>{notes.length} thẻ</small></button>
       </div>
 

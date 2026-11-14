@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Rating, type Grade } from 'ts-fsrs'
 import { GRAMMAR, type Exercise, type Kind } from './data/grammar'
-import { PHRASES } from './data/phrases'
-import { EXERCISES, UNITS } from './data/units'
+import { EXERCISES } from './data/units'
 import type { Level } from './data/vocab'
 import { allNotes, mediaUrl, NOTE } from './decks'
 import { Gap, Mcq, Order, type Answer } from './Exercise'
@@ -13,16 +12,16 @@ import { Confetti, L, Page } from './ui'
 import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
 
 const EX = new Map(EXERCISES.map((e) => [e.id, e]))
-const TOPIC = new Map(UNITS.map((t) => [t.id, t]))
+const TOPIC = new Map(GRAMMAR.map((t) => [t.id, t]))
 /** Ngữ pháp luôn được học lần lượt từ dễ đến khó. */
 const ORDER: Level[] = ['A1', 'A2', 'B1', 'B2']
-/** Mỗi phiên chỉ học một loại nội dung: từ vựng, ngữ pháp hoặc mẫu câu. */
-export type Mode = 'vocab' | 'grammar' | 'phrases'
-export const MODE_NAME: Record<Mode, [string, string]> = { vocab: ['Từ vựng', 'Vocabulary'], grammar: ['Ngữ pháp', 'Grammar'], phrases: ['Mẫu câu', 'Phrases'] }
-const modeOf = (id: string): Mode => (id.startsWith('g:') ? 'grammar' : id.startsWith('p:') ? 'phrases' : 'vocab')
+/** Mỗi phiên chỉ học một loại nội dung: từ vựng hoặc ngữ pháp. */
+export type Mode = 'vocab' | 'grammar'
+export const MODE_NAME: Record<Mode, [string, string]> = { vocab: ['Từ vựng', 'Vocabulary'], grammar: ['Ngữ pháp', 'Grammar'] }
+const modeOf = (id: string): Mode => (id.startsWith('g:') ? 'grammar' : 'vocab')
 /** Số mục mới tối đa mỗi phiên theo thời lượng. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
 const NEW_COUNT: Record<Mode, Record<number, number>> = {
-  vocab: { 5: 5, 15: 12, 30: 30 }, grammar: { 5: 4, 15: 8, 30: 16 }, phrases: { 5: 3, 15: 6, 30: 12 },
+  vocab: { 5: 5, 15: 12, 30: 30 }, grammar: { 5: 4, 15: 8, 30: 16 },
 }
 const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu' }
 
@@ -90,7 +89,7 @@ function buildQueue(mode: Mode, minutes: number): Item[] {
     return [...due, ...words.map((n): Item => ({ id: n.id, phase: 'intro' }))]
   }
   // Bài tập mới theo thứ tự chủ đề; chủ đề chưa học lần nào thì cho đọc bài trước.
-  const topics = mode === 'grammar' ? ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)) : PHRASES
+  const topics = ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv))
   const fresh = topics.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, cap)
   const out: Item[] = []
   const taught = new Set<string>()
@@ -202,7 +201,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
 
       {lesson && (
         <section className="card slide lesson" key={key}>
-          <span className="tag write">{lesson.domain ? '💬 Mẫu câu mới · New phrases' : '📘 Ngữ pháp mới · New grammar'} · {lesson.level}</span>
+          <span className="tag write">📘 Ngữ pháp mới · New grammar</span>
           <Lesson t={lesson} />
           <button className="primary" onClick={() => advance()}><L vi="Đã hiểu, làm bài tập" en="Got it, let me practise" /></button>
         </section>
@@ -243,7 +242,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
 
       {ex && unit && View && (
         <section className="card slide exercise" key={key} data-ex={ex.id} data-kind={ex.kind}>
-          <span className="tag write">{unit.domain ? '💬' : '📘'} {unit.vi} · {KIND[ex.kind]}</span>
+          <span className="tag write">📘 {unit.vi} · {KIND[ex.kind]}</span>
           <View ex={ex} done={checked} onAnswer={setAnswer} />
         </section>
       )}
