@@ -283,3 +283,16 @@ button.go > span:first-child { width: 34px; height: 34px; border-radius: 50%; ba
 .heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px; }
 .heat i { height: 14px; border-radius: 5px; background: var(--line); }
 .heat i[data-on='1'] { background: #6cc494; } .heat i.future { background: none; border: 1px dashed var(--line); }
+
+/* Chọn thời lượng và hai phiên học tách riêng */
+.seg { display: flex; background: var(--bg); border-radius: 14px; padding: 4px; gap: 4px; margin-bottom: 12px; }
+.seg button { flex: 1; min-height: 40px; border: none; box-shadow: none; background: none; color: var(--muted); border-radius: 11px; font-size: .92rem; }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+.seg button:active:not(:disabled) { transform: none; box-shadow: none; }
+.modes { display: flex; gap: 10px; margin-bottom: 10px; }
+.modes button.go { flex: 1; flex-direction: column; gap: 0; min-height: 96px; padding: 12px 6px; }
+.modes button.go > span:first-child { background: rgba(255, 255, 255, .22); width: 40px; height: 40px; font-size: 1.25rem; margin-bottom: 4px; }
+.modes button.go b { font-size: 1.02rem; } .modes button.go small { font-size: .74rem; font-weight: 600; opacity: .85; }
+button.go.grammar { background: linear-gradient(135deg, #58c79a, #7fd6c4); box-shadow: 0 5px 0 #3f9f79, 0 10px 22px rgba(79, 174, 122, .3); color: #083325; }
+button.go.grammar:active:not(:disabled) { box-shadow: 0 1px 0 #3f9f79; }
+.ring-in span { text-align: center; line-height: 1.05; padding: 0 6px; }

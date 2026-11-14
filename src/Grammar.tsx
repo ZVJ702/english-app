@@ -59,20 +59,21 @@ function Row({ t, onOpen }: { t: Topic; onOpen: () => void }) {
   )
 }
 
-export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack: () => void }) {
+export function Library({ mode, onBack, onPractice }: { mode: 'grammar' | 'phrases'; onBack: () => void; onPractice?: () => void }) {
   const [open, setOpen] = useState<Topic | null>(null)
   if (open) {
     return (
       <Page title={mode === 'grammar' ? <L vi="Bài ngữ pháp" en="Grammar lesson" /> : <L vi="Mẫu câu" en="Phrases" />} onBack={() => setOpen(null)}>
         <section className="card lesson"><span className="tag write">{open.domain ? '💬' : '📘'} {open.level}</span><Lesson t={open} /></section>
-        <p className="muted small center">Bài tập của chủ đề này tự xuất hiện trong các phiên học và được ôn lại theo lịch.</p>
+        <p className="muted small center">{mode === 'grammar' ? 'Bài tập của chủ đề này nằm trong phiên "Học ngữ pháp" và được ôn lại theo lịch.' : 'Bài tập của tình huống này nằm trong phiên "Luyện mẫu câu".'}</p>
       </Page>
     )
   }
   if (mode === 'phrases') {
     return (
       <Page title={<L vi="Giao tiếp" en="Conversation" />} onBack={onBack}>
-        <BuddySays mood="wave" size={84} en="Say it out loud!" vi="Mẫu câu theo tình huống: nghe, nói theo và sắp xếp lại câu." />
+        <BuddySays mood="wave" size={84} en="Useful phrases!" vi="Mẫu câu theo tình huống. Bấm vào một tình huống để đọc, hoặc luyện ghép câu bên dưới." />
+        {onPractice && <button className="primary" onClick={onPractice}><L vi="Luyện mẫu câu 15 phút" en="Practise phrases" /></button>}
         {Object.entries(DOMAINS).map(([id, name]) => (
           <div key={id} className="group">
             <h2 className="sec">{name}</h2>
@@ -85,7 +86,7 @@ export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack:
   }
   return (
     <Page title={<L vi="Ngữ pháp" en="Grammar" />} onBack={onBack}>
-      <BuddySays mood="think" size={84} en="Grammar, step by step." vi="Mở một chủ đề để đọc bài; bài tập nằm trong phiên học." />
+      <BuddySays mood="think" size={84} en="Grammar, step by step." vi="Mở một chủ đề để đọc bài; bài tập nằm trong phiên Học ngữ pháp." />
       {(['A1', 'A2', 'B1', 'B2'] as const).map((lv) => (
         <div key={lv} className="group">
           <h2 className="sec">Phần {lv}</h2>

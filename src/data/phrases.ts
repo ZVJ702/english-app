@@ -96,4 +96,4 @@ s: Compared to the past, life is much faster now.|So với trước đây, cuộ
 s: It reminds me of a trip I took last year.|Nó làm tôi nhớ đến một chuyến đi năm ngoái.
 s: To sum up, I think the benefits outweigh the drawbacks.|Tóm lại, tôi nghĩ lợi ích nhiều hơn hạn chế.
 `
-export const PHRASES = parseUnits(RAW, 'p', ['listen', 'speak', 'order'])
+export const PHRASES = parseUnits(RAW, 'p')

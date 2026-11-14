@@ -5,7 +5,7 @@ import { PHRASES } from './data/phrases'
 import { EXERCISES, UNITS } from './data/units'
 import type { Level } from './data/vocab'
 import { allNotes, mediaUrl, NOTE } from './decks'
-import { Gap, Listen, Mcq, Order, Speak, type Answer } from './Exercise'
+import { Gap, Mcq, Order, type Answer } from './Exercise'
 import { Lesson } from './Grammar'
 import { addNewWord, dueTime, getState, grade, newWordsLeft } from './store'
 import { sameText, speak, untilText } from './util'
@@ -16,9 +16,15 @@ const EX = new Map(EXERCISES.map((e) => [e.id, e]))
 const TOPIC = new Map(UNITS.map((t) => [t.id, t]))
 /** Ngữ pháp luôn được học lần lượt từ dễ đến khó. */
 const ORDER: Level[] = ['A1', 'A2', 'B1', 'B2']
-/** Số mục mới tối đa mỗi phiên: [từ vựng, bài tập ngữ pháp, mẫu câu giao tiếp]. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
-const NEW_COUNT: Record<number, [number, number, number]> = { 5: [5, 2, 1], 15: [12, 4, 2], 30: [30, 8, 4] }
-const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu', listen: 'Nghe chép', speak: 'Nói' }
+/** Mỗi phiên chỉ học một loại nội dung: từ vựng, ngữ pháp hoặc mẫu câu. */
+export type Mode = 'vocab' | 'grammar' | 'phrases'
+export const MODE_NAME: Record<Mode, [string, string]> = { vocab: ['Từ vựng', 'Vocabulary'], grammar: ['Ngữ pháp', 'Grammar'], phrases: ['Mẫu câu', 'Phrases'] }
+const modeOf = (id: string): Mode => (id.startsWith('g:') ? 'grammar' : id.startsWith('p:') ? 'phrases' : 'vocab')
+/** Số mục mới tối đa mỗi phiên theo thời lượng. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
+const NEW_COUNT: Record<Mode, Record<number, number>> = {
+  vocab: { 5: 5, 15: 12, 30: 30 }, grammar: { 5: 4, 15: 8, 30: 16 }, phrases: { 5: 3, 15: 6, 30: 12 },
+}
+const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu' }
 
 /** intro = giới thiệu từ mới; lesson = đọc bài (id là mã chủ đề); test = kiểm tra. */
 interface Item { id: string; phase: 'intro' | 'lesson' | 'test' }
@@ -51,49 +57,39 @@ async function say(v: Vocab) {
   else speak(v.word)
 }
 
-export function countDue(): number {
+export function countDue(mode?: Mode): number {
   const now = Date.now()
-  return Object.entries(getState().cards).filter(([id, r]) => known(id) && dueTime(r) <= now).length
+  return Object.entries(getState().cards).filter(([id, r]) => known(id) && (!mode || modeOf(id) === mode) && dueTime(r) <= now).length
 }
 export function countNew(): number {
   const c = getState().cards
   return EXERCISES.filter((e) => !c[e.id]).length + allNotes().filter((n) => !c[n.id]).length
 }
 
-function buildQueue(minutes: number): Item[] {
+function buildQueue(mode: Mode, minutes: number): Item[] {
   const s = getState()
   const now = Date.now()
   const due: Item[] = Object.entries(s.cards)
-    .filter(([id, r]) => known(id) && dueTime(r) <= now)
+    .filter(([id, r]) => known(id) && modeOf(id) === mode && dueTime(r) <= now)
     .sort((a, b) => dueTime(a[1]) - dueTime(b[1]))
     .map(([id]) => ({ id, phase: 'test' }))
-  const [cap, ng, np] = NEW_COUNT[minutes] ?? [12, 4, 2]
-  const nw = Math.min(cap, newWordsLeft())
-  // Từ mới lấy từ các bộ thẻ đã nhập, theo đúng thứ tự trong bộ thẻ.
-  const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, nw).map((n): Item => ({ id: n.id, phase: 'intro' }))
-  // Bài tập mới: ngữ pháp và mẫu câu theo thứ tự. Chủ đề chưa học lần nào thì cho đọc bài trước.
-  const fresh = [
-    ...ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)).flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, ng),
-    ...PHRASES.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, np),
-  ]
-  const units: Item[] = []
+  const cap = NEW_COUNT[mode][minutes] ?? 8
+  if (mode === 'vocab') {
+    // Từ mới lấy từ các bộ thẻ đã nhập, theo đúng thứ tự trong bộ thẻ, không vượt quá số từ mới mỗi ngày.
+    const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, Math.min(cap, newWordsLeft()))
+    return [...due, ...words.map((n): Item => ({ id: n.id, phase: 'intro' }))]
+  }
+  // Bài tập mới theo thứ tự chủ đề; chủ đề chưa học lần nào thì cho đọc bài trước.
+  const topics = mode === 'grammar' ? ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)) : PHRASES
+  const fresh = topics.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, cap)
+  const out: Item[] = []
   const taught = new Set<string>()
   for (const e of fresh) {
     const started = TOPIC.get(e.topic)!.exercises.some((x) => s.cards[x.id])
-    if (!started && !taught.has(e.topic)) { taught.add(e.topic); units.push({ id: e.topic, phase: 'lesson' }) }
-    units.push({ id: e.id, phase: 'test' })
+    if (!started && !taught.has(e.topic)) { taught.add(e.topic); out.push({ id: e.topic, phase: 'lesson' }) }
+    out.push({ id: e.id, phase: 'test' })
   }
-  // Học xen kẽ: cứ hai từ mới thì chen một bài tập (bài đọc luôn đi liền trước bài tập đầu tiên của nó).
-  const mixed: Item[] = []
-  while (words.length || units.length) {
-    mixed.push(...words.splice(0, 2))
-    if (units.length) {
-      const g = units.shift()!
-      mixed.push(g)
-      if (g.phase === 'lesson' && units.length) mixed.push(units.shift()!)
-    }
-  }
-  return [...due, ...mixed]
+  return [...due, ...out]
 }
 
 const cloze = (ex: string) => ex.replace(/\{[^}]+\}/, '_____')
@@ -112,8 +108,8 @@ function solution(ex: Exercise): string {
   return ex.q
 }
 
-export function Session({ minutes, onExit }: { minutes: number; onExit: () => void }) {
-  const initial = useMemo(() => buildQueue(minutes), [minutes])
+export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number; onExit: () => void }) {
+  const initial = useMemo(() => buildQueue(mode, minutes), [mode, minutes])
   const [queue, setQueue] = useState(initial)
   const [start] = useState(() => Date.now())
   const [done, setDone] = useState(0)
@@ -144,6 +140,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
     setQueue(rest)
   }
   function rate(g: Grade) {
+    if (mode !== 'vocab' && !getState().cards[item.id]) setFresh((n) => n + 1)
     const due = grade(item.id, g)
     setDone((n) => n + 1)
     const good = correct || g >= Rating.Good
@@ -165,12 +162,12 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
           <div className="stats">
             <div className="chip c1"><b>{done}</b><L vi="lượt ôn" en="reviews" /></div>
             <div className="chip c2"><b>{done ? Math.round((right / done) * 100) : 0}%</b><L vi="chính xác" en="accuracy" /></div>
-            <div className="chip c3"><b>{fresh}</b><L vi="từ mới" en="new words" /></div>
+            <div className="chip c3"><b>{fresh}</b>{mode === 'vocab' ? <L vi="từ mới" en="new words" /> : <L vi="bài mới" en="new items" />}</div>
           </div>
           <p className="muted">
             {done === 0
-              ? 'Chưa có thẻ nào đến hạn và bạn đã học hết nội dung mới. · Nothing is due right now.'
-              : `Còn ${countDue()} thẻ đến hạn. Nghỉ cũng được — thẻ sẽ chờ bạn, không bị phạt.`}
+              ? mode === 'vocab' ? 'Không có từ nào đến hạn, và bạn đã học đủ số từ mới của hôm nay (hoặc chưa nhập bộ thẻ nào).' : 'Chưa có thẻ nào đến hạn và bạn đã học hết nội dung mới. · Nothing is due right now.'
+              : `Còn ${countDue(mode)} thẻ ${MODE_NAME[mode][0].toLowerCase()} đến hạn. Nghỉ cũng được — thẻ sẽ chờ bạn, không bị phạt.`}
           </p>
           <button className="primary" onClick={onExit}><L vi="Về trang chính" en="Home" /></button>
         </section>
@@ -182,10 +179,10 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
   const key = `${item.id}-${item.phase}-${done}`
   const cheer = CHEERS[done % CHEERS.length], comfort = COMFORTS[done % COMFORTS.length]
   const unit = ex ? TOPIC.get(ex.topic)! : undefined
-  const View = ex ? { mcq: Mcq, gap: Gap, order: Order, listen: Listen, speak: Speak }[ex.kind] : null
+  const View = ex ? { mcq: Mcq, gap: Gap, order: Order }[ex.kind] : null
 
   return (
-    <Page title={<L vi={`Phiên ${minutes} phút`} en={`${minutes}-minute session`} />} onBack={onExit}>
+    <Page title={<L vi={`${MODE_NAME[mode][0]} · ${minutes} phút`} en={`${MODE_NAME[mode][1]} · ${minutes} min`} />} onBack={onExit}>
       <div className="bar"><i style={{ width: `${elapsed * 100}%` }} /></div>
       <p className="muted small status">
         <span>{last || `Còn ${queue.length} mục trong hàng đợi · ${queue.length} queued`}</span>
@@ -233,7 +230,7 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
       {ex && unit && View && (
         <section className="card slide exercise" key={key} data-ex={ex.id} data-kind={ex.kind}>
           <span className="tag write">{unit.domain ? '💬' : '📘'} {unit.vi} · {KIND[ex.kind]}</span>
-          <View ex={ex} done={checked} onAnswer={setAnswer} level={unit.level} />
+          <View ex={ex} done={checked} onAnswer={setAnswer} />
         </section>
       )}
 
@@ -246,7 +243,6 @@ export function Session({ minutes, onExit }: { minutes: number; onExit: () => vo
           )}
           {ex && (
             <>
-              {ex.kind === 'speak' && answer.given && <p className="muted small">App nghe được: “{answer.given}”</p>}
               <p className="answer">{solution(ex)} <button className="ghost" onClick={() => speak(solution(ex))} aria-label="Nghe · Listen">🔊</button></p>
               {(ex.why || ex.vi) && <p className="why">{ex.why || ex.vi}</p>}
             </>

@@ -8,8 +8,8 @@ import type { Level } from './vocab'
 //   e: câu ví dụ tiếng Anh|nghĩa tiếng Việt
 //   q: câu hỏi trắc nghiệm|A;B;C;D|vị trí đáp án đúng (từ 0)|giải thích
 //   t: câu điền chỗ trống (tự gõ)|đáp án (các cách viết đúng cách nhau bằng " / ")|giải thích
-//   s: câu mẫu tiếng Anh|nghĩa — app tự tạo bài sắp xếp từ, nghe chép và nói từ các câu này
-export type Kind = 'mcq' | 'gap' | 'order' | 'listen' | 'speak'
+//   s: câu mẫu tiếng Anh|nghĩa — app tự tạo bài sắp xếp từ thành câu từ các câu này
+export type Kind = 'mcq' | 'gap' | 'order'
 export interface Exercise { id: string; topic: string; kind: Kind; q: string; opts: string[]; a: number; answers: string[]; vi: string; why: string }
 export interface Topic {
   id: string; level: Level; vi: string; en: string; formula: string; domain?: string
@@ -17,7 +17,7 @@ export interface Topic {
 }
 
 /** Đọc khối văn bản thành danh sách chủ đề. prefix là tiền tố mã thẻ ("g" cho ngữ pháp, "p" cho mẫu câu). */
-export function parseUnits(raw: string, prefix: string, kinds: Kind[]): Topic[] {
+export function parseUnits(raw: string, prefix: string): Topic[] {
   const out: Topic[] = []
   const count = { q: 0, t: 0, s: 0 }
   for (const line of raw.trim().split('\n')) {
@@ -48,7 +48,7 @@ export function parseUnits(raw: string, prefix: string, kinds: Kind[]): Topic[] 
     } else if (line.startsWith('s: ')) {
       const [q, vi] = body.split('|')
       const n = ++count.s
-      t.exercises.push(ex(prefix === 'g' ? `s${n}` : String(n), kinds[(n - 1) % kinds.length], { q, vi, answers: [q] }))
+      t.exercises.push(ex(prefix === 'g' ? `s${n}` : String(n), 'order', { q, vi, answers: [q] }))
     }
   }
   return out
@@ -1080,7 +1080,7 @@ s: Please reply as soon as possible.|Vui lòng trả lời sớm nhất có th�
 s: This one is as good as that one.|Cái này tốt bằng cái kia.
 s: We sold twice as many units as last year.|Chúng tôi bán được gấp đôi số sản phẩm so với năm ngoái.
 `
-export const GRAMMAR = parseUnits(RAW, 'g', ['order', 'listen', 'speak', 'order'])
+export const GRAMMAR = parseUnits(RAW, 'g')
 
 // Các chủ đề sẽ được viết tiếp để đủ giáo trình A1 → B2 (hiện trong trang Ngữ pháp với nhãn "Sắp có").
 export const PLANNED: Record<Level, string[]> = {

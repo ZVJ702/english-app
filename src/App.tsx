@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { GRAMMAR } from './data/grammar'
 import { PHRASES } from './data/phrases'
-import { EXERCISES, GRAMMAR_EXERCISES } from './data/units'
+import { GRAMMAR_EXERCISES } from './data/units'
 import { Library } from './Grammar'
-import { countDue, known, Session } from './Session'
+import { countDue, known, Session, type Mode } from './Session'
 import { Decks } from './Decks'
 import { useDecks } from './decks'
 import { Settings } from './Settings'
@@ -11,12 +11,13 @@ import { streaks, syncNow, syncReady, today, useStore } from './store'
 import { L, Ring } from './ui'
 import { Buddy } from './Buddy'
 
-type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' }
+type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
   const { notes } = useDecks()
   const [view, setView] = useState<View>({ name: 'home' })
+  const [minutes, setMinutes] = useState(15)
   // Khi có bản cập nhật mới tải xong: nạp lại ngay nếu đang ở trang chính, còn đang học thì đợi quay về trang chính.
   const updateReady = useRef(false)
   const atHome = useRef(true)
@@ -40,15 +41,15 @@ export default function App() {
     return () => sw.removeEventListener('controllerchange', onChange)
   }, [])
 
-  if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
+  if (view.name === 'session') return <Session mode={view.mode} minutes={view.minutes} onExit={home} />
   if (view.name === 'grammar') return <Library mode="grammar" onBack={home} />
-  if (view.name === 'phrases') return <Library mode="phrases" onBack={home} />
+  if (view.name === 'phrases') return <Library mode="phrases" onBack={home} onPractice={() => setView({ name: 'session', mode: 'phrases', minutes: 15 })} />
   if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} />
 
   const due = countDue()
+  const dueWords = countDue('vocab'), dueGrammar = countDue('grammar')
   const learned = Object.keys(s.cards).filter(known).length
-  const total = EXERCISES.length + notes.length
   const now = new Date()
   const DAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
   const back = (n: number) => { const d = new Date(now); d.setDate(d.getDate() - n); return d }
@@ -91,26 +92,33 @@ export default function App() {
         <h2><L vi="Hôm nay" en="Today" /></h2>
         <div className="rings">
           <Ring value={s.dailyNew ? wordsToday / s.dailyNew : 0} tone="a">
-            <b>{wordsToday}<small>/{s.dailyNew}</small></b><span>từ mới</span>
+            <b>{wordsToday}<small>/{s.dailyNew}</small></b><span>từ mới<br />hôm nay</span>
           </Ring>
-          <Ring value={due === 0 ? (doneToday ? 1 : 0) : (s.days[today()] ?? 0) / ((s.days[today()] ?? 0) + due)} tone="b">
-            <b>{due}</b><span>cần ôn</span>
+          <Ring value={dueWords === 0 && learned > 0 ? 1 : 0} tone="b">
+            <b>{dueWords}</b><span>từ<br />cần ôn</span>
           </Ring>
-          <Ring value={total ? learned / total : 0} tone="c">
-            <b>{total ? Math.round((learned / total) * 100) : 0}<small>%</small></b><span>đã học</span>
+          <Ring value={dueGrammar === 0 && gEx > 0 ? 1 : 0} tone="c">
+            <b>{dueGrammar}</b><span>ngữ pháp<br />cần ôn</span>
           </Ring>
         </div>
-        <button className="primary go" onClick={() => setView({ name: 'session', minutes: 15 })}>
-          <span>▶</span> <L vi={doneToday ? 'Học tiếp 15 phút' : 'Bắt đầu học 15 phút'} en="Start a 15-minute session" />
-        </button>
-        <div className="grades alt">
-          <button onClick={() => setView({ name: 'session', minutes: 5 })}>☕ <L vi="5 phút" en="Quick" /></button>
-          <button onClick={() => setView({ name: 'session', minutes: 30 })}>🚀 <L vi="30 phút" en="Deep" /></button>
+        <div className="seg" role="group" aria-label="Thời lượng phiên học">
+          {[5, 15, 30].map((m) => (
+            <button key={m} className={m === minutes ? 'on' : ''} onClick={() => setMinutes(m)}>{m} phút</button>
+          ))}
         </div>
+        <div className="modes">
+          <button className="go vocab" onClick={() => setView({ name: 'session', mode: 'vocab', minutes })}>
+            <span>📚</span><b>Học từ vựng</b><small>Vocabulary</small>
+          </button>
+          <button className="go grammar" onClick={() => setView({ name: 'session', mode: 'grammar', minutes })}>
+            <span>📘</span><b>Học ngữ pháp</b><small>Grammar</small>
+          </button>
+        </div>
+        <p className="muted small center">Mỗi phiên chỉ học một phần: từ vựng hoặc ngữ pháp, không trộn lẫn.</p>
       </section>
 
       <div className="tiles">
-        <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📘</span><b>Ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
+        <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
         <button className="tile t3" onClick={() => setView({ name: 'phrases' })}><span className="icon">💬</span><b>Giao tiếp</b><small>{PHRASES.length} tình huống</small></button>
         <button className="tile t1" onClick={() => setView({ name: 'decks' })}><span className="icon">🗂️</span><b>Bộ từ</b><small>{notes.length} thẻ</small></button>
       </div>
