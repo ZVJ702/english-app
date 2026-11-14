@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import { exportData, importData, newSyncCode, setDailyNew, setRetention, setSync, syncNow, syncReady, useStore } from './store'
 import { L, Page } from './ui'
+import { setPrefs, usePrefs, type Theme } from './prefs'
 
 export function Settings({ onBack }: { onBack: () => void }) {
   const s = useStore()
+  const pr = usePrefs()
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const file = useRef<HTMLInputElement>(null)
@@ -24,6 +26,37 @@ export function Settings({ onBack }: { onBack: () => void }) {
 
   return (
     <Page title={<L vi="Cài đặt" en="Settings" />} onBack={onBack}>
+      <section className="card">
+        <h2><L vi="Giao diện" en="Appearance" /></h2>
+        <label>Màu nền · Theme</label>
+        <div className="seg">
+          {([['auto', 'Theo máy'], ['light', '☀️ Sáng'], ['dark', '🌙 Tối']] as [Theme, string][]).map(([t, name]) => (
+            <button key={t} className={pr.theme === t ? 'on' : ''} onClick={() => setPrefs({ theme: t })}>{name}</button>
+          ))}
+        </div>
+        <label>Cỡ chữ · Text size</label>
+        <div className="seg">
+          {([[15, 'Nhỏ'], [16, 'Vừa'], [18, 'Lớn'], [20, 'Rất lớn']] as [number, string][]).map(([f, name]) => (
+            <button key={f} className={pr.font === f ? 'on' : ''} onClick={() => setPrefs({ font: f })}>{name}</button>
+          ))}
+        </div>
+        <label className="switch">
+          <input type="checkbox" checked={pr.sound} onChange={(e) => setPrefs({ sound: e.target.checked })} />
+          <span>🔔 Âm báo khi trả lời đúng hoặc sai</span>
+        </label>
+        <p className="muted small">Các tùy chọn giao diện chỉ áp dụng cho thiết bị này.</p>
+      </section>
+
+      <section className="card">
+        <h2><L vi="Mục tiêu mỗi tuần" en="Weekly goal" /></h2>
+        <div className="grades">
+          {[3, 4, 5, 6, 7].map((n) => (
+            <button key={n} className={pr.weekGoal === n ? 'primary' : ''} onClick={() => setPrefs({ weekGoal: n })}>{n}</button>
+          ))}
+        </div>
+        <p className="muted small">Số ngày bạn muốn học trong một tuần (tính từ thứ Hai). Trang chính sẽ hiện tiến độ của tuần này.</p>
+      </section>
+
       <section className="card">
         <h2><L vi="Số từ mới mỗi ngày" en="New words per day" /></h2>
         <div className="grades">

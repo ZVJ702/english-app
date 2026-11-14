@@ -4,6 +4,8 @@ import { EXERCISES as GRAMMAR_EXERCISES } from './data/units'
 import { Library } from './Grammar'
 import { backlogLimit, countDue, known, REVIEW_CAP, Session, type Mode } from './Session'
 import { Words } from './Words'
+import { Stats } from './Stats'
+import { usePrefs } from './prefs'
 import { leechCount } from './vocab'
 import { Decks } from './Decks'
 import { useDecks } from './decks'
@@ -12,10 +14,11 @@ import { streaks, syncNow, syncReady, today, useStore } from './store'
 import { L, Ring } from './ui'
 import { Buddy } from './Buddy'
 
-type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'words' } | { name: 'settings' }
+type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'words' } | { name: 'stats' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
+  const pr = usePrefs()
   const { notes } = useDecks()
   const [view, setView] = useState<View>({ name: 'home' })
   const [minutes, setMinutes] = useState(15)
@@ -46,6 +49,7 @@ export default function App() {
   if (view.name === 'grammar') return <Library onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
   if (view.name === 'words') return <Words onBack={home} />
+  if (view.name === 'stats') return <Stats onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} />
 
   const due = countDue()
@@ -62,6 +66,10 @@ export default function App() {
   const weekReviews = week.reduce((a, d) => a + d.n, 0)
   const weekWords = Array.from({ length: 7 }, (_, i) => s.newWords[today(back(i))] ?? 0).reduce((a, b) => a + b, 0)
   const activeDays = week.filter((d) => d.n > 0).length
+  // Mục tiêu tuần: số ngày có học từ thứ Hai đến hôm nay.
+  const sinceMonday = (now.getDay() + 6) % 7
+  const weekDone = Array.from({ length: sinceMonday + 1 }, (_, i) => s.days[today(back(i))] ?? 0).filter((n) => n > 0).length
+  const weekMet = weekDone >= pr.weekGoal
   const { current: streak, best } = streaks(s.days)
   const doneToday = (s.days[today()] ?? 0) > 0
   const wordsToday = s.newWords[today()] ?? 0
@@ -84,6 +92,7 @@ export default function App() {
           <p className="hello">{hello[0]}!</p>
           <p className="hello-en">{hello[1]}</p>
           <div className="chips">
+            <span className={`badge goal ${weekMet ? 'met' : ''}`}>{weekMet ? '🏆' : '🎯'} Tuần này {weekDone}/{pr.weekGoal} ngày</span>
             <span className={`badge flame ${streak > 0 ? 'lit' : ''}`}>🔥 {streak} ngày</span>
           </div>
         </div>
@@ -127,10 +136,11 @@ export default function App() {
         )}
       </section>
 
-      <div className="tiles">
+      <div className="tiles grid2">
         <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
         <button className="tile t3" onClick={() => setView({ name: 'words' })}><span className="icon">{leeches ? '⚠️' : '🔤'}</span><b>Từ của tôi</b><small>{leeches ? `${leeches} từ khó` : `${notes.length} từ`}</small></button>
         <button className="tile t1" onClick={() => setView({ name: 'decks' })}><span className="icon">🗂️</span><b>Bộ từ</b><small>{notes.length} thẻ</small></button>
+        <button className="tile t4" onClick={() => setView({ name: 'stats' })}><span className="icon">📊</span><b>Thống kê</b><small>Dự báo, lịch học</small></button>
       </div>
 
       <section className="card activity">
@@ -156,7 +166,7 @@ export default function App() {
         <div className="heat" aria-hidden="true">
           {grid.map((n, i) => <i key={i} className={n === null ? 'future' : ''} style={n ? { opacity: 0.3 + 0.7 * (n / peak) } : undefined} data-on={n ? 1 : 0} />)}
         </div>
-        <p className="muted small">Nghỉ một ngày không làm mất chuỗi; nghỉ hai ngày liền thì chuỗi bắt đầu lại.</p>
+        <p className="muted small">Mục tiêu tuần: {pr.weekGoal} ngày (đổi trong Cài đặt). Chuỗi ngày: nghỉ một ngày không mất chuỗi, nghỉ hai ngày liền thì bắt đầu lại.</p>
       </section>
 
       <section className="card">

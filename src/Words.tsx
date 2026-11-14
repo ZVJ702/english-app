@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useDecks } from './decks'
+import { updateNote, useDecks, type Note } from './decks'
 import { Memo } from './Memo'
 import { say } from './Session'
 import { useStore } from './store'
@@ -10,13 +10,35 @@ import { BuddySays } from './Buddy'
 type Filter = 'leech' | 'learning' | 'known' | 'new' | 'all'
 const FILTERS: [Filter, string][] = [['leech', '⚠️ Từ khó'], ['learning', 'Đang học'], ['known', 'Đã thuộc'], ['new', 'Chưa học'], ['all', 'Tất cả']]
 
-/** Danh sách từ đã nhập: lọc theo trạng thái, tìm kiếm, xem và viết mẹo nhớ. */
+/** Ô sửa từ, nghĩa và câu ví dụ. Chỉ thay đổi trên thiết bị này. */
+function EditNote({ n, onDone }: { n: Note; onDone: () => void }) {
+  const [f, setF] = useState({ word: n.word, meaning: n.meaning, example: n.example })
+  const [busy, setBusy] = useState(false)
+  return (
+    <div className="edit-note">
+      <label>Từ tiếng Anh · Word<input value={f.word} onChange={(e) => setF({ ...f, word: e.target.value })} autoCapitalize="none" /></label>
+      <label>Nghĩa · Meaning<input value={f.meaning} onChange={(e) => setF({ ...f, meaning: e.target.value })} /></label>
+      <label>Câu ví dụ · Example<textarea rows={2} value={f.example} onChange={(e) => setF({ ...f, example: e.target.value })} /></label>
+      <p className="muted small">Thay đổi chỉ lưu trên thiết bị này; tiến độ học của từ được giữ nguyên.</p>
+      <div className="grades">
+        <button onClick={onDone}>Hủy</button>
+        <button className="primary" disabled={busy || !f.word.trim() || !f.meaning.trim()}
+          onClick={async () => { setBusy(true); await updateNote({ ...n, word: f.word.trim(), meaning: f.meaning.trim(), example: f.example.trim() }); onDone() }}>
+          Lưu
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Danh sách từ đã nhập: lọc theo trạng thái, tìm kiếm, nghe, sửa và viết mẹo nhớ. */
 export function Words({ onBack }: { onBack: () => void }) {
   const s = useStore()
   const { notes } = useDecks()
   const [filter, setFilter] = useState<Filter>('leech')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
   const rows = useMemo(() => notes.map((n) => ({ n, v: fromNote(n), st: wordStatus(n.id, s.cards) })), [notes, s.cards])
   const count = (f: Filter) => (f === 'all' ? rows.length : rows.filter((r) => r.st === f).length)
   const needle = q.trim().toLowerCase()
@@ -55,8 +77,16 @@ export function Words({ onBack }: { onBack: () => void }) {
                   {p ? `Thẻ tự viết: nhớ được khoảng ${Math.round(p.c.stability)} ngày` : r ? 'Đang ở bước nhận diện, chưa mở thẻ tự viết' : 'Chưa học'}
                   {lapses > 0 && ` · đã quên ${lapses} lần`}
                 </p>
-                <button className="ghost" onClick={() => say(v)}>🔊 Nghe</button>
-                <Memo id={n.id} open={st === 'leech'} />
+                {editing === n.id ? <EditNote n={n} onDone={() => setEditing(null)} /> : (
+                  <>
+                    {v.ex && <p className="example">{v.ex.replace(/[{}]/g, '')}</p>}
+                    <div className="row-actions">
+                      <button className="ghost" onClick={() => say(v)}>🔊 Nghe</button>
+                      <button className="ghost" onClick={() => setEditing(n.id)}>✏️ Sửa</button>
+                    </div>
+                    <Memo id={n.id} open={st === 'leech'} />
+                  </>
+                )}
               </div>
             )}
           </section>

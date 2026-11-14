@@ -4,6 +4,9 @@ import '@fontsource-variable/nunito'
 import './index.css'
 import App from './App.tsx'
 import { loadDecks } from './decks'
+import { applyPrefs } from './prefs'
+
+applyPrefs()
 
 await loadDecks()
 createRoot(document.getElementById('root')!).render(

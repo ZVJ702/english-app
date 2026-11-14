@@ -50,6 +50,14 @@ export async function saveDeck(deck: Deck, notes: Note[], media: Map<string, Blo
   await finished(t)
   await loadDecks()
 }
+/** Sửa nội dung một từ (chỉ trên thiết bị này). Tiến độ học giữ nguyên vì gắn với mã từ. */
+export async function updateNote(n: Note) {
+  const d = await open()
+  const t = d.transaction('notes', 'readwrite')
+  t.objectStore('notes').put(n)
+  await finished(t)
+  await loadDecks()
+}
 export async function deleteDeck(id: string) {
   const d = await open()
   const t = d.transaction(['decks', 'notes', 'media'], 'readwrite')

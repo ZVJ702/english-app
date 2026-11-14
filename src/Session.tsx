@@ -8,6 +8,7 @@ import { Gap, Mcq, Order, type Answer } from './Exercise'
 import { Lesson } from './Grammar'
 import { Memo } from './Memo'
 import { addNewWord, dueTime, getState, grade, LEECH, newWordsLeft } from './store'
+import { chime } from './prefs'
 import { sameText, speak, untilText } from './util'
 import { baseId, hintText, isRecId, readyToPromote, recId, vocab, type Vocab } from './vocab'
 import { Confetti, L, Page } from './ui'
@@ -166,6 +167,50 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const checked = answer !== null
   const correct = !!answer?.ok
   useEffect(() => { if (!checked) inputRef.current?.focus() }, [item, checked])
+  useEffect(() => { if (answer) chime(answer.ok) }, [answer])
+
+  // Phím tắt: Enter/Space = nút chính, 1–4 = chọn đáp án hoặc mức chấm, H = gợi ý.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+      if (t.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return // để nút đang được chọn tự xử lý
+      const click = (el: Element | null | undefined) => {
+        if (el instanceof HTMLButtonElement && !el.disabled) { e.preventDefault(); el.click() }
+      }
+      if (/^[1-4]$/.test(e.key)) {
+        const opts = document.querySelectorAll('.opts button:not(:disabled)')
+        click(opts.length ? opts[+e.key - 1] : document.querySelectorAll('.rate button')[+e.key - 1])
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        const go = document.querySelectorAll('[data-key=go]')
+        click(go[go.length - 1])
+      } else if (e.key === 'h' || e.key === 'H') click(document.querySelector('[data-key=hint]'))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  // Vuốt trên điện thoại: sang phải = nút chính, sang trái = mức chấm đầu tiên (Quên / Học lại / Khó).
+  const touch = useRef<{ x: number; y: number; ok: boolean } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    const el = e.target as HTMLElement
+    touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ok: !el.closest('input, textarea, .bank, .line, .sheet, .memo') }
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const t0 = touch.current
+    touch.current = null
+    if (!t0?.ok) return
+    const dx = e.changedTouches[0].clientX - t0.x, dy = e.changedTouches[0].clientY - t0.y
+    if (Math.abs(dx) < 80 || Math.abs(dy) > 45) return
+    const target = dx > 0 ? [...document.querySelectorAll('[data-key=go]')].pop() : document.querySelector('.rate button')
+    if (target instanceof HTMLButtonElement && !target.disabled) target.click()
+  }
+  const [full, setFull] = useState(!!document.fullscreenElement)
+  useEffect(() => {
+    const f = () => setFull(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', f)
+    return () => document.removeEventListener('fullscreenchange', f)
+  }, [])
+  const toggleFull = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {})
 
   function advance(requeue?: Item) {
     const rest = queue.slice(1)
@@ -209,6 +254,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
     if (item.probe) setProbe((m) => ({ ...m, [EX.get(item.id)!.topic]: [...(m[EX.get(item.id)!.topic] ?? []), correct] }))
     if (mode !== 'vocab' && !getState().cards[item.id]) setFresh((n) => n + 1)
     const ok = isRec ? g > Rating.Again : correct
+    if (isRec) chime(ok)
     const due = grade(item.id, g)
     setDone((n) => n + 1)
     setCombo((c) => (ok ? c + 1 : 0))
@@ -260,7 +306,9 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const leechTag = leech ? ' · ⚠️ Từ khó' : ''
 
   return (
-    <Page title={<L vi={`${MODE_NAME[mode][0]} · ${minutes} phút`} en={`${MODE_NAME[mode][1]} · ${minutes} min`} />} onBack={onExit}>
+    <Page title={<L vi={`${MODE_NAME[mode][0]} · ${minutes} phút`} en={`${MODE_NAME[mode][1]} · ${minutes} min`} />} onBack={onExit} className="session"
+      action={document.fullscreenEnabled && <button className="ghost full-btn" onClick={toggleFull} aria-label={full ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>{full ? '🗗' : '⛶'}</button>}>
+      <div className="swipe-zone" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="bar"><i style={{ width: `${elapsed * 100}%` }} /></div>
       <p className="muted small status">
         <span>{last || `Còn ${queue.length} mục trong hàng đợi · ${queue.length} queued`}</span>
@@ -274,7 +322,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
           {topicCard.formula && <p className="formula">{topicCard.formula}</p>}
           <BuddySays mood="think" size={70} en="Already know it?" vi="Nếu đã chắc chủ đề này, làm 3 câu kiểm tra nhanh để bỏ qua phần học." />
           <div className="choice">
-            <button className="primary" onClick={() => startTopic(false)}>⚡ <L vi="Kiểm tra nhanh 3 câu" en="Quick check" /></button>
+            <button className="primary" data-key="go" onClick={() => startTopic(false)}>⚡ <L vi="Kiểm tra nhanh 3 câu" en="Quick check" /></button>
             <button onClick={() => startTopic(true)}>📖 <L vi="Đọc bài trước" en="Read the lesson first" /></button>
           </div>
         </section>
@@ -293,7 +341,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
                 ? `"${topicCard.vi}" được đánh dấu đã nắm. Các bài tập của chủ đề này sẽ chỉ quay lại thưa thớt để giữ trí nhớ.`
                 : `Cùng đọc bài "${topicCard.vi}" rồi làm tiếp các bài tập nhé.`}
             </p>
-            <button className="primary" onClick={() => finishProbe(mastered)}>
+            <button className="primary" data-key="go" onClick={() => finishProbe(mastered)}>
               {mastered ? <L vi="Tiếp tục" en="Continue" /> : <L vi="Đọc bài" en="Read the lesson" />}
             </button>
           </section>
@@ -304,7 +352,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
         <section className="card slide lesson" key={key}>
           <span className="tag write">📘 Ngữ pháp mới · New grammar</span>
           <Lesson t={lesson} />
-          <button className="primary" onClick={() => advance()}><L vi="Đã hiểu, làm bài tập" en="Got it, let me practise" /></button>
+          <button className="primary" data-key="go" onClick={() => advance()}><L vi="Đã hiểu, làm bài tập" en="Got it, let me practise" /></button>
         </section>
       )}
 
@@ -318,7 +366,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
             <p key={i} className="example">{t} <button className="ghost" onClick={() => speak(t)} aria-label="Nghe câu · Listen">🔊</button></p>
           ))}
           <Memo id={word.id} />
-          <button className="primary" onClick={() => { setFresh((n) => n + 1); addNewWord(); advance({ id: recId(item.id), phase: 'test' }) }}>
+          <button className="primary" data-key="go" onClick={() => { setFresh((n) => n + 1); addNewWord(); advance({ id: recId(item.id), phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
         </section>
@@ -332,16 +380,16 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
           <h2 className="word">{word.word} <button className="ghost" onClick={() => say(word)} aria-label="Nghe · Listen">🔊</button></h2>
           {lines(plain(word.ex)).map((t, i) => <p key={i} className="example">{t}</p>)}
           {!revealed ? (
-            <button className="primary reveal-btn" onClick={() => setRevealed(true)}><L vi="Hiện nghĩa" en="Show meaning" /></button>
+            <button className="primary reveal-btn" data-key="go" onClick={() => setRevealed(true)}><L vi="Hiện nghĩa" en="Show meaning" /></button>
           ) : (
             <>
               <p className="meaning revealed">{word.vi}</p>
               <Memo id={word.id} open={leech} />
               <p className="muted small">Bạn có nhớ ra nghĩa trước khi bấm không?</p>
-              <div className="grades four">
+              <div className="grades four rate">
                 <button onClick={() => rate(Rating.Again)}><L vi="Quên" en="Forgot" /></button>
                 <button onClick={() => rate(Rating.Hard)}><L vi="Khó" en="Hard" /></button>
-                <button className="primary" autoFocus onClick={() => rate(Rating.Good)}><L vi="Nhớ" en="Good" /></button>
+                <button className="primary" data-key="go" autoFocus onClick={() => rate(Rating.Good)}><L vi="Nhớ" en="Good" /></button>
                 <button onClick={() => rate(Rating.Easy)}><L vi="Dễ" en="Easy" /></button>
               </div>
             </>
@@ -366,7 +414,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
               placeholder="Gõ từ tiếng Anh · Type the English word" autoCapitalize="none" autoComplete="off" spellCheck={false} />
             {!checked && (
               <div className="grades">
-                <button type="button" disabled={hints >= 3} onClick={() => { setHints((h) => h + 1); inputRef.current?.focus() }}>
+                <button type="button" data-key="hint" disabled={hints >= 3} onClick={() => { setHints((h) => h + 1); inputRef.current?.focus() }}>
                   💡 <L vi={hints ? `Gợi ý thêm (${hints}/3)` : 'Gợi ý'} en="Hint" />
                 </button>
                 <button className="primary" disabled={!input.trim()}><L vi="Kiểm tra" en="Check" /></button>
@@ -403,27 +451,30 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
               )}
             </>
           )}
-          <div className="grades">
+          <div className="grades rate">
             {correct && hints > 0 ? (
               <>
-                <button className="primary" autoFocus onClick={() => rate(Rating.Hard)}><L vi="Khó" en="Hard" /></button>
+                <button className="primary" data-key="go" autoFocus onClick={() => rate(Rating.Hard)}><L vi="Khó" en="Hard" /></button>
                 <button onClick={() => rate(Rating.Good)}><L vi="Được" en="Good" /></button>
               </>
             ) : correct ? (
               <>
                 <button onClick={() => rate(Rating.Hard)}><L vi="Khó" en="Hard" /></button>
-                <button className="primary" autoFocus onClick={() => rate(Rating.Good)}><L vi="Được" en="Good" /></button>
+                <button className="primary" data-key="go" autoFocus onClick={() => rate(Rating.Good)}><L vi="Được" en="Good" /></button>
                 <button onClick={() => rate(Rating.Easy)}><L vi="Dễ" en="Easy" /></button>
               </>
             ) : (
               <>
-                <button className="primary" autoFocus onClick={() => rate(Rating.Again)}><L vi="Học lại" en="Again" /></button>
+                <button className="primary" data-key="go" autoFocus onClick={() => rate(Rating.Again)}><L vi="Học lại" en="Again" /></button>
                 {((word && answer.given) || (ex && ex.kind !== 'mcq')) && <button onClick={() => rate(Rating.Hard)}><L vi={word ? 'Gõ nhầm' : 'Gần đúng'} en={word ? 'Typo' : 'Close'} /></button>}
               </>
             )}
           </div>
         </section>
       )}
+
+      <p className="keys-hint">Phím tắt: Enter hoặc Space để tiếp tục · 1–4 để chọn · H để xem gợi ý</p>
+      </div>
 
       {peek && TOPIC.get(peek) && (
         <div className="sheet-wrap" onClick={() => setPeek(null)}>
