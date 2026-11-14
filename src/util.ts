@@ -1,5 +1,3 @@
-import { getState } from './store'
-
 const CONTRACTIONS: [RegExp, string][] = [
   [/\bcan't\b/g, 'can not'], [/\bcannot\b/g, 'can not'], [/\bwon't\b/g, 'will not'],
   [/n't\b/g, ' not'], [/\bi'm\b/g, 'i am'], [/'re\b/g, ' are'], [/'ve\b/g, ' have'],
@@ -18,8 +16,7 @@ export function speak(text: string) {
     synth.cancel()
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'en-US'
-    // Tốc độ đọc chậm hơn ở cấp thấp, gần tốc độ tự nhiên ở cấp cao.
-    u.rate = { A1: 0.75, A2: 0.85, B1: 0.95, B2: 1 }[getState().level ?? 'A2']
+    u.rate = 0.9 // chậm hơn tốc độ tự nhiên một chút để dễ nghe
     // Ưu tiên giọng Anh-Mỹ; trong các giọng Anh-Mỹ, ưu tiên giọng chất lượng cao của thiết bị nếu có.
     const voices = synth.getVoices().filter((x) => x.lang.replace('_', '-') === 'en-US')
     const v = voices.find((x) => /natural|google|enhanced|premium/i.test(x.name)) ?? voices[0]

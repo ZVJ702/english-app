@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react'
-import type { Level } from './data/vocab'
-import { exportData, importData, newSyncCode, setDailyNew, setLevel, setSync, syncNow, syncReady, useStore } from './store'
+import { exportData, importData, newSyncCode, setDailyNew, setSync, syncNow, syncReady, useStore } from './store'
 import { L, Page } from './ui'
 
-export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: () => void }) {
+export function Settings({ onBack }: { onBack: () => void }) {
   const s = useStore()
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
@@ -25,17 +24,6 @@ export function Settings({ onBack, onRetest }: { onBack: () => void; onRetest: (
 
   return (
     <Page title={<L vi="Cài đặt" en="Settings" />} onBack={onBack}>
-      <section className="card">
-        <h2><L vi="Trình độ" en="Level" /></h2>
-        <select value={s.level ?? 'B1'} onChange={(e) => setLevel(e.target.value as Level)}>
-          <option value="A1">A1 — Vỡ lòng · Beginner</option>
-          <option value="A2">A2 — Sơ cấp · Elementary</option>
-          <option value="B1">B1 — Trung cấp · Intermediate</option>
-          <option value="B2">B2 — Trung cấp trên · Upper-intermediate</option>
-        </select>
-        <button className="ghost line" onClick={onRetest}><L vi="Làm lại bài xếp lớp" en="Retake placement test" /></button>
-      </section>
-
       <section className="card">
         <h2><L vi="Số từ mới mỗi ngày" en="New words per day" /></h2>
         <div className="grades">

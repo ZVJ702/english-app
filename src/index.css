@@ -71,12 +71,13 @@ form .primary, .card > .primary { width: 100%; }
 .buddy .zzz { animation: twinkle 2s ease-in-out infinite; }
 .buddy .dust { animation: flow 16s linear infinite; }
 .buddy .comet { animation: flow 5s linear infinite; }
-.buddy .second { transform-origin: 117px 54px; animation: spin 8s linear infinite; }
-.buddy.sleep .second, .buddy.sleep .comet { animation-play-state: paused; }
+.buddy .swirl { animation: flow linear infinite; } .buddy .s1 { animation-duration: 16s; } .buddy .s2 { animation-duration: 11s; } .buddy .s3 { animation-duration: 7s; }
+.buddy .sand { animation: sand .7s linear infinite; }
+.buddy.sleep .swirl, .buddy.sleep .sand, .buddy.sleep .comet { animation-play-state: paused; }
 @keyframes hover { 0%, 100% { transform: translateY(1px) rotate(-1.5deg); } 50% { transform: translateY(-6px) rotate(1.5deg); } }
 @keyframes shade { 0%, 100% { transform: scaleX(1); opacity: .14; } 50% { transform: scaleX(.8); opacity: .07; } }
 @keyframes flow { to { stroke-dashoffset: -100; } }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes sand { to { stroke-dashoffset: -2.6; } }
 .says { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; text-align: left; }
 .bubble { position: relative; background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 8px 14px;
   display: flex; flex-direction: column; line-height: 1.3; }

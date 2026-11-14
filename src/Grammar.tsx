@@ -60,7 +60,6 @@ function Row({ t, onOpen }: { t: Topic; onOpen: () => void }) {
 }
 
 export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack: () => void }) {
-  const s = useStore()
   const [open, setOpen] = useState<Topic | null>(null)
   if (open) {
     return (
@@ -89,7 +88,7 @@ export function Library({ mode, onBack }: { mode: 'grammar' | 'phrases'; onBack:
       <BuddySays mood="think" size={84} en="Grammar, step by step." vi="Mở một chủ đề để đọc bài; bài tập nằm trong phiên học." />
       {(['A1', 'A2', 'B1', 'B2'] as const).map((lv) => (
         <div key={lv} className="group">
-          <h2 className="sec">Cấp {lv}{lv === s.level && <span className="badge">Hiện tại</span>}</h2>
+          <h2 className="sec">Phần {lv}</h2>
           {GRAMMAR.filter((t) => t.level === lv).map((t) => <Row key={t.id} t={t} onOpen={() => setOpen(t)} />)}
           {PLANNED[lv].length > 0 && (
             <details className="planned">

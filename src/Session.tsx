@@ -14,7 +14,8 @@ import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
 
 const EX = new Map(EXERCISES.map((e) => [e.id, e]))
 const TOPIC = new Map(UNITS.map((t) => [t.id, t]))
-const ORDER: Record<Level, Level[]> = { A1: ['A1', 'A2', 'B1', 'B2'], A2: ['A2', 'A1', 'B1', 'B2'], B1: ['B1', 'B2', 'A2', 'A1'], B2: ['B2', 'B1', 'A2', 'A1'] }
+/** Ngữ pháp luôn được học lần lượt từ dễ đến khó. */
+const ORDER: Level[] = ['A1', 'A2', 'B1', 'B2']
 /** Số mục mới tối đa mỗi phiên: [từ vựng, bài tập ngữ pháp, mẫu câu giao tiếp]. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
 const NEW_COUNT: Record<number, [number, number, number]> = { 5: [5, 2, 1], 15: [12, 4, 2], 30: [30, 8, 4] }
 const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu', listen: 'Nghe chép', speak: 'Nói' }
@@ -70,10 +71,9 @@ function buildQueue(minutes: number): Item[] {
   const nw = Math.min(cap, newWordsLeft())
   // Từ mới lấy từ các bộ thẻ đã nhập, theo đúng thứ tự trong bộ thẻ.
   const words = allNotes().filter((n) => !s.cards[n.id]).slice(0, nw).map((n): Item => ({ id: n.id, phase: 'intro' }))
-  // Bài tập mới: ngữ pháp ưu tiên cấp hiện tại; mẫu câu theo thứ tự. Chủ đề chưa học lần nào thì cho đọc bài trước.
-  const order = ORDER[s.level ?? 'B1']
+  // Bài tập mới: ngữ pháp và mẫu câu theo thứ tự. Chủ đề chưa học lần nào thì cho đọc bài trước.
   const fresh = [
-    ...order.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)).flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, ng),
+    ...ORDER.flatMap((lv) => GRAMMAR.filter((t) => t.level === lv)).flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, ng),
     ...PHRASES.flatMap((t) => t.exercises).filter((e) => !s.cards[e.id]).slice(0, np),
   ]
   const units: Item[] = []

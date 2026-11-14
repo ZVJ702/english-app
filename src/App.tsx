@@ -1,27 +1,17 @@
 import { useEffect, useState } from 'react'
 import { GRAMMAR } from './data/grammar'
 import { PHRASES } from './data/phrases'
-import { EXERCISES } from './data/units'
+import { EXERCISES, GRAMMAR_EXERCISES } from './data/units'
 import { Library } from './Grammar'
-import { Placement } from './Placement'
 import { countDue, known, Session } from './Session'
 import { Decks } from './Decks'
 import { useDecks } from './decks'
 import { Settings } from './Settings'
-import { setLevel, streaks, syncNow, syncReady, today, useStore } from './store'
-import { L, Page, Ring } from './ui'
-import { Buddy, BuddySays } from './Buddy'
+import { streaks, syncNow, syncReady, today, useStore } from './store'
+import { L, Ring } from './ui'
+import { Buddy } from './Buddy'
 
-const LADDER = [
-  { id: 'A1', vi: 'Vỡ lòng', ielts: 'IELTS 1–2.5' },
-  { id: 'A2', vi: 'Sơ cấp', ielts: 'IELTS 3–3.5' },
-  { id: 'B1', vi: 'Trung cấp', ielts: 'IELTS 4–5' },
-  { id: 'B2', vi: 'Trên trung cấp', ielts: 'IELTS 5.5–6.5' },
-  { id: 'C1', vi: 'Cao cấp', ielts: 'IELTS 7–8' },
-  { id: 'C2', vi: 'Thành thạo', ielts: 'IELTS 8.5–9' },
-]
-
-type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' } | { name: 'placement' }
+type View = { name: 'home' } | { name: 'session'; minutes: number } | { name: 'grammar' } | { name: 'phrases' } | { name: 'decks' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
@@ -30,25 +20,11 @@ export default function App() {
   const home = () => { setView({ name: 'home' }); if (syncReady()) syncNow().catch(() => {}) }
   useEffect(() => { if (syncReady()) syncNow().catch(() => {}) }, [])
 
-  if (!s.level && view.name !== 'placement') {
-    return (
-      <Page title="English App">
-        <section className="card">
-          <BuddySays mood="wave" size={110} en="Hi, I'm Infi!" vi="Mình là Infi, bạn học cùng bạn." />
-          <h2><L vi="Chào bạn!" en="Welcome!" /></h2>
-          <p>Trước tiên, làm một bài kiểm tra ngắn 20 câu (khoảng 5 phút) để app chọn nội dung vừa sức.</p>
-          <p className="muted small">A short 20-question test picks the right starting level.</p>
-          <button className="primary" onClick={() => setView({ name: 'placement' })}><L vi="Làm bài xếp lớp" en="Take the placement test" /></button>
-        </section>
-      </Page>
-    )
-  }
-  if (view.name === 'placement') return <Placement onDone={home} onSkip={s.level ? home : undefined} />
   if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
   if (view.name === 'grammar') return <Library mode="grammar" onBack={home} />
   if (view.name === 'phrases') return <Library mode="phrases" onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
-  if (view.name === 'settings') return <Settings onBack={home} onRetest={() => setView({ name: 'placement' })} />
+  if (view.name === 'settings') return <Settings onBack={home} />
 
   const due = countDue()
   const learned = Object.keys(s.cards).filter(known).length
@@ -69,11 +45,9 @@ export default function App() {
   const wordsToday = s.newWords[today()] ?? 0
   const hour = now.getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
-  const cur = LADDER.findIndex((l) => l.id === s.level)
-  const lvItems = GRAMMAR.filter((t) => t.level === s.level).flatMap((t) => t.exercises)
-  const lvLearned = lvItems.filter((x) => s.cards[x.id]).length
-  const lvPct = Math.round((lvLearned / Math.max(1, lvItems.length)) * 100)
-  const next = s.level === 'A1' ? 'A2' : s.level === 'A2' ? 'B1' : s.level === 'B1' ? 'B2' : null
+  const gDone = GRAMMAR.filter((t) => t.exercises.every((e) => s.cards[e.id])).length
+  const gStarted = GRAMMAR.filter((t) => t.exercises.some((e) => s.cards[e.id])).length
+  const gEx = GRAMMAR_EXERCISES.filter((e) => s.cards[e.id]).length
   const say = notes.length === 0 ? ['Add your words!', 'Chưa có từ vựng: vào "Bộ từ" để nhập bộ thẻ Anki.']
     : due > 0 ? ["Let's review!", `${due} thẻ đang chờ bạn ôn.`]
     : doneToday ? ['Great work today!', 'Hôm nay bạn đã học rồi. Học thêm cũng được, nghỉ cũng được.']
@@ -87,7 +61,6 @@ export default function App() {
           <p className="hello-en">{hello[1]}</p>
           <div className="chips">
             <span className={`badge flame ${streak > 0 ? 'lit' : ''}`}>🔥 {streak} ngày</span>
-            <span className="badge">Trình độ {s.level}</span>
           </div>
         </div>
         <Buddy mood={doneToday && due === 0 ? 'cheer' : due > 0 || learned === 0 ? 'wave' : 'happy'} size={112} />
@@ -148,30 +121,18 @@ export default function App() {
         <p className="muted small">Nghỉ một ngày không làm mất chuỗi; nghỉ hai ngày liền thì chuỗi bắt đầu lại.</p>
       </section>
 
-      <section className="card ladder-card">
-        <h2><L vi="Lộ trình cấp độ" en="Level path" /></h2>
-        <div className="ladder">
-          {LADDER.map((lv, i) => (
-            <div key={lv.id} className={`step ${i < cur ? 'done' : i === cur ? 'now' : ''}`}>
-              <span className="cap">{i === cur ? 'Hiện tại' : i === 0 ? 'Thấp nhất' : i === LADDER.length - 1 ? 'Cao nhất' : '\u00a0'}</span>
-              <span className="dot">{i < cur ? '✓' : lv.id}</span>
-              <span className="name">{lv.vi}</span>
-              <span className="ielts">{lv.ielts}</span>
-            </div>
-          ))}
-        </div>
+      <section className="card">
+        <h2><L vi="Tiến độ ngữ pháp" en="Grammar progress" /></h2>
         <div className="lv-progress">
-          <div className="bar"><i style={{ width: `${lvPct}%` }} /></div>
-          <span>{lvLearned}/{lvItems.length} bài ngữ pháp cấp {s.level}</span>
+          <div className="bar"><i style={{ width: `${(gEx / GRAMMAR_EXERCISES.length) * 100}%` }} /></div>
+          <span>{gEx}/{GRAMMAR_EXERCISES.length} bài tập</span>
         </div>
-        {next && lvPct >= 80 ? (
-          <button className="primary" onClick={() => setLevel(next)}><L vi={`Lên cấp ${next}`} en={`Move up to ${next}`} /></button>
-        ) : (
-          <p className="muted small">
-            {next ? `Làm được 80% bài tập ngữ pháp cấp ${s.level} thì bạn có thể lên ${next}. Hiện tại: ${lvPct}%.`
-              : 'Đây là cấp cao nhất app đang có nội dung. C1 và C2 sẽ được thêm sau.'}
-          </p>
-        )}
+        <div className="facts">
+          <div><b>{gDone}</b><span>chủ đề đã xong</span></div>
+          <div><b>{gStarted - gDone}</b><span>đang học</span></div>
+          <div><b>{GRAMMAR.length - gStarted}</b><span>chưa học</span></div>
+        </div>
+        <p className="muted small">Ngữ pháp được học lần lượt từ bài đầu tiên đến bài cuối, mỗi phiên vài bài tập mới.</p>
       </section>
 
       <button className="ghost line" onClick={() => setView({ name: 'settings' })}>⚙️ <L vi="Cài đặt, đồng bộ, sao lưu" en="Settings, sync, backup" /></button>

@@ -8,11 +8,6 @@ const spark = (x: number, y: number, r: number) => {
   const k = r * 0.3
   return `M${x} ${y - r} L${x + k} ${y - k} L${x + r} ${y} L${x + k} ${y + k} L${x} ${y + r} L${x - k} ${y + k} L${x - r} ${y} L${x - k} ${y - k}Z`
 }
-const TICKS = Array.from({ length: 12 }, (_, i) => {
-  const a = (i * Math.PI) / 6, r1 = i % 3 === 0 ? 13.6 : 14.8, r2 = 16.8
-  return { x1: 117 + r1 * Math.sin(a), y1: 54 - r1 * Math.cos(a), x2: 117 + r2 * Math.sin(a), y2: 54 - r2 * Math.cos(a), major: i % 3 === 0 }
-})
-
 export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: number }) {
   const up = mood === 'cheer'
   // Mí mắt: che một phần hai vòng để tạo biểu cảm (cười híp, buồn, ngủ).
@@ -56,28 +51,35 @@ export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: numbe
         <ellipse cx="35" cy="103" rx="10" ry="5.2" fill="#6fd3a8" /><ellipse cx="125" cy="103" rx="10" ry="5.2" fill="#f191bd" />
 
         <g clipPath="url(#infi-body)">
-          {/* mắt trái: không gian */}
+          {/* mắt trái: không gian — một thiên hà xoắn ốc đang xoay */}
           <g clipPath="url(#infi-l)">
             <rect x="0" y="20" width="80" height="70" fill="url(#infi-sky)" />
-            <circle cx="33" cy="66" r="16" fill="url(#infi-neb)" /><circle cx="56" cy="42" r="11" fill="url(#infi-neb)" opacity=".7" />
-            <path d="M34 44 a9 9 0 1 0 10 11.5 a7.2 7.2 0 1 1 -10 -11.5z" fill="#ffe08a" />
-            <circle cx="55" cy="63" r="4.2" fill="#f7a3c8" /><path d="M51.2 61.6 Q55 60 58.8 61.6" stroke="#fff" strokeWidth=".9" fill="none" opacity=".6" />
-            <ellipse cx="55" cy="63" rx="7.6" ry="2.1" fill="none" stroke="#ffcf5c" strokeWidth="1.2" transform="rotate(-18 55 63)" />
-            <path d="M50 36 L58 40" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity=".75" /><circle cx="58.6" cy="40.3" r="1.2" fill="#fff" />
-            <g className="twinkle" fill="#fff">
-              <circle cx="27" cy="42" r="1" /><circle cx="44" cy="38" r=".8" /><circle cx="26" cy="60" r=".7" /><circle cx="46" cy="70" r=".9" />
-              <circle cx="62" cy="52" r=".7" /><circle cx="38" cy="72" r=".6" /><circle cx="22" cy="50" r=".6" />
+            <circle cx="43" cy="54" r="21" fill="url(#infi-neb)" />
+            <g transform="rotate(-25 43 54)" fill="none" strokeLinecap="round">
+              <ellipse className="swirl s1" cx="43" cy="54" rx="19.5" ry="7.6" pathLength={100} stroke="#fff" strokeWidth=".9" strokeDasharray="2 3" opacity=".5" />
+              <ellipse className="swirl s1" cx="43" cy="54" rx="17" ry="6.5" pathLength={100} stroke="#c3baf8" strokeWidth="2.4" strokeDasharray="36 14" opacity=".8" />
+              <ellipse className="swirl s2" cx="43" cy="54" rx="13" ry="5" pathLength={100} stroke="#f7a3c8" strokeWidth="2.2" strokeDasharray="34 16" opacity=".85" />
+              <ellipse className="swirl s3" cx="43" cy="54" rx="9" ry="3.4" pathLength={100} stroke="#ffe9a8" strokeWidth="2" strokeDasharray="32 18" opacity=".95" />
+              <ellipse cx="43" cy="54" rx="5" ry="3.2" fill="#fff8d6" />
             </g>
-            <path d={spark(49, 49, 2.6)} fill="#ffcf5c" /><path d={spark(30, 69, 1.6)} fill="#c3baf8" />
+            <circle cx="43" cy="54" r="1.9" fill="#fff" />
+            <g className="twinkle" fill="#fff">
+              <circle cx="26" cy="44" r=".9" /><circle cx="58" cy="40" r=".8" /><circle cx="30" cy="68" r=".8" /><circle cx="60" cy="64" r="1" />
+              <circle cx="50" cy="72" r=".7" /><circle cx="34" cy="38" r=".7" /><circle cx="22" cy="56" r=".6" />
+            </g>
+            <path d={spark(57, 47, 2.3)} fill="#ffcf5c" /><path d={spark(28, 57, 1.6)} fill="#c3baf8" />
           </g>
-          {/* mắt phải: thời gian */}
+          {/* mắt phải: thời gian — một chiếc đồng hồ cát đang chảy */}
           <g clipPath="url(#infi-r)">
             <rect x="80" y="20" width="80" height="70" fill="url(#infi-clock)" />
-            <circle cx="117" cy="54" r="18.4" fill="none" stroke="#d3c9fb" strokeWidth="1" />
-            {TICKS.map((t, i) => <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={t.major ? '#8b7fe8' : '#b9b0f3'} strokeWidth={t.major ? 1.8 : 0.9} strokeLinecap="round" />)}
-            <g stroke={INK} strokeLinecap="round"><path d="M117 54 L110.5 49" strokeWidth="2.6" /><path d="M117 54 V41.5" strokeWidth="2" /></g>
-            <line className="second" x1="117" y1="57.5" x2="117" y2="39.5" stroke="#f191bd" strokeWidth="1.1" strokeLinecap="round" />
-            <circle cx="117" cy="54" r="2.3" fill={INK} /><circle cx="117" cy="54" r="1" fill="#f7a3c8" />
+            <g stroke="#8b7fe8" strokeWidth="2.4" strokeLinecap="round"><path d="M106 38 H128" /><path d="M106 70 H128" /></g>
+            <path d="M108.5 39.5 H125.5 C125.5 47 119 50 118.2 54 C119 58 125.5 61 125.5 68.5 H108.5 C108.5 61 115 58 115.8 54 C115 50 108.5 47 108.5 39.5Z"
+              fill="#fff" stroke="#b9b0f3" strokeWidth="1.3" />
+            <path d="M111.3 45 H122.7 C121.5 48.5 118.6 50.5 117.6 53 H116.4 C115.4 50.5 112.5 48.5 111.3 45Z" fill="#ffcf5c" />
+            <path className="sand" d="M117 53 V63" stroke="#ffcf5c" strokeWidth="1.2" strokeDasharray="1.2 1.4" />
+            <path d="M110 68 C110.5 64.5 114 62 117 61 C120 62 123.5 64.5 124 68Z" fill="#ffcf5c" />
+            <path d="M111.5 43 Q113 41.5 115 41.5" stroke="#fff" strokeWidth="1" strokeLinecap="round" fill="none" />
+            <g fill="#b9b0f3"><circle cx="102" cy="48" r=".9" /><circle cx="132" cy="58" r=".9" /><circle cx="101" cy="62" r=".7" /><circle cx="133" cy="46" r=".7" /></g>
           </g>
           {/* mí mắt theo biểu cảm */}
           {lids.map((d, i) => <path key={i} d={d} fill="url(#infi-rb)" />)}
