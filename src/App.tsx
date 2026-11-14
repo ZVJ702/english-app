@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GRAMMAR } from './data/grammar'
 import { PHRASES } from './data/phrases'
 import { EXERCISES, GRAMMAR_EXERCISES } from './data/units'
@@ -17,8 +17,28 @@ export default function App() {
   const s = useStore()
   const { notes } = useDecks()
   const [view, setView] = useState<View>({ name: 'home' })
-  const home = () => { setView({ name: 'home' }); if (syncReady()) syncNow().catch(() => {}) }
-  useEffect(() => { if (syncReady()) syncNow().catch(() => {}) }, [])
+  // Khi có bản cập nhật mới tải xong: nạp lại ngay nếu đang ở trang chính, còn đang học thì đợi quay về trang chính.
+  const updateReady = useRef(false)
+  const atHome = useRef(true)
+  atHome.current = view.name === 'home'
+  const home = () => {
+    if (updateReady.current) { location.reload(); return }
+    setView({ name: 'home' })
+    if (syncReady()) syncNow().catch(() => {})
+  }
+  useEffect(() => {
+    if (syncReady()) syncNow().catch(() => {})
+    const sw = navigator.serviceWorker
+    if (!sw) return
+    const hadController = !!sw.controller
+    const onChange = () => {
+      if (!hadController) return // lần cài đầu tiên, không phải cập nhật
+      if (atHome.current) location.reload()
+      else updateReady.current = true
+    }
+    sw.addEventListener('controllerchange', onChange)
+    return () => sw.removeEventListener('controllerchange', onChange)
+  }, [])
 
   if (view.name === 'session') return <Session minutes={view.minutes} onExit={home} />
   if (view.name === 'grammar') return <Library mode="grammar" onBack={home} />
