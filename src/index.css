@@ -304,3 +304,38 @@ button.go > span:first-child { width: 34px; height: 34px; border-radius: 50%; ba
 button.go.grammar { background: linear-gradient(135deg, #58c79a, #7fd6c4); box-shadow: 0 5px 0 #3f9f79, 0 10px 22px rgba(79, 174, 122, .3); color: #083325; }
 button.go.grammar:active:not(:disabled) { box-shadow: 0 1px 0 #3f9f79; }
 .ring-in span { text-align: center; line-height: 1.05; padding: 0 6px; }
+
+/* ===== Đợt 1: thẻ hai chiều, gợi ý, mẹo nhớ, từ khó ===== */
+.reveal-btn { width: 100%; min-height: 58px; margin-top: 6px; }
+.meaning.revealed { animation: pop .3s ease; color: var(--accent); }
+.grades.four button { padding: 8px 4px; }
+.hint { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: .08em; color: var(--accent); margin: 4px 0 2px; }
+.card.vocab-test form .grades { margin-top: 2px; }
+.memo { background: var(--butter); color: var(--butter-ink); border-radius: 16px; padding: 10px 14px; margin: 6px 0 12px; text-align: left; }
+.memo b { display: block; } .memo p { margin: 4px 0 2px; font-weight: 700; }
+.memo textarea { background: var(--card); margin: 6px 0 8px; }
+.memo button.ghost { color: var(--butter-ink); padding: 0; min-height: 28px; }
+.memo-add { display: block; margin: 0 auto 10px; }
+.answer.big { font-size: 2rem; font-weight: 900; color: var(--bad); text-align: center; margin-bottom: 4px; }
+.notice { background: var(--butter); color: var(--butter-ink); border-radius: 14px; padding: 10px 14px; font-size: .9rem; font-weight: 700; margin: 0; }
+.miss-list { display: flex; flex-direction: column; gap: 8px; }
+button.miss-row { display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 600; box-shadow: none; border-width: 1px; padding: 10px 12px; }
+.miss-row b { flex: none; max-width: 55%; } .miss-row span { flex: 1; color: var(--muted); font-size: .9rem; } .miss-row i { font-style: normal; }
+.tiles .tile.t3 small { opacity: .85; }
+/* Từ của tôi */
+input.search { margin: 0; }
+.chips-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips-row::-webkit-scrollbar { display: none; }
+button.pill { flex: none; min-height: 38px; padding: 6px 12px; border-radius: 99px; font-size: .88rem; box-shadow: none; border-width: 1px; }
+button.pill.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.pill small { opacity: .7; margin-left: 4px; }
+.card.word-row { padding: 0; overflow: hidden; }
+button.word-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; border: none; box-shadow: none; background: none; text-align: left; padding: 12px 16px; border-radius: 0; }
+button.word-head:active:not(:disabled) { transform: none; box-shadow: none; }
+.word-head > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.word-head b { font-size: 1.15rem; } .word-head .muted { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st { flex: none; font-size: .74rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: var(--bg); color: var(--muted); }
+.st-leech { background: var(--bad-bg); color: var(--bad); } .st-known { background: var(--mint); color: var(--mint-ink); } .st-learning { background: var(--lav); color: var(--lav-ink); }
+.word-body { padding: 0 16px 12px; }
+.card.vocab-test form .grades button { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.card.vocab-test > button.ghost.line { display: block; width: 100%; text-align: center; margin-top: 4px; }

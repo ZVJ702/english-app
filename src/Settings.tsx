@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { exportData, importData, newSyncCode, setDailyNew, setSync, syncNow, syncReady, useStore } from './store'
+import { exportData, importData, newSyncCode, setDailyNew, setRetention, setSync, syncNow, syncReady, useStore } from './store'
 import { L, Page } from './ui'
 
 export function Settings({ onBack }: { onBack: () => void }) {
@@ -34,6 +34,21 @@ export function Settings({ onBack }: { onBack: () => void }) {
         <p className="muted small">
           Với {s.dailyNew} từ mỗi ngày, một cuốn 600 từ mất khoảng {Math.ceil(600 / s.dailyNew)} ngày học.
           Càng nhiều từ mới thì số thẻ phải ôn mỗi ngày càng tăng, thường gấp 5 đến 8 lần số từ mới.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2><L vi="Mức ghi nhớ mục tiêu" en="Desired retention" /></h2>
+        <div className="grades">
+          {[0.85, 0.9, 0.95].map((r) => (
+            <button key={r} className={Math.abs(s.retention - r) < 0.001 ? 'primary' : ''} onClick={() => setRetention(r)}>{Math.round(r * 100)}%</button>
+          ))}
+        </div>
+        <p className="muted small">
+          {s.retention < 0.875 ? '85%: ít thẻ phải ôn mỗi ngày nhất, đổi lại quên nhiều hơn. Hợp khi bận hoặc đang có nhiều thẻ tồn.'
+            : s.retention < 0.925 ? '90% (khuyên dùng): cân bằng giữa số thẻ phải ôn và mức nhớ. Đây là mức mặc định của thuật toán FSRS.'
+            : '95%: nhớ chắc nhất nhưng số thẻ phải ôn mỗi ngày tăng mạnh. Hợp khi sắp thi.'}
+          {' '}Thay đổi chỉ áp dụng cho các lần ôn từ nay trở đi.
         </p>
       </section>
 

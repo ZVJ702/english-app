@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { createEmptyCard, fsrs, type Card, type Grade } from 'ts-fsrs'
+import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs'
 import type { Level } from './data/vocab'
 
 export interface Rec { c: Card; u: number }
@@ -14,6 +14,13 @@ export interface Shared {
   /** Số từ mới tối đa mỗi ngày do người học chọn. */
   dailyNew: number
   dailyNewU: number
+  /** Mẹo nhớ người học tự viết, theo mã thẻ từ vựng. */
+  memo: Record<string, { text: string; u: number }>
+  /** Mức ghi nhớ mục tiêu của FSRS (0.85 – 0.95). */
+  retention: number
+  retentionU: number
+  /** Số lượt trả lời đúng theo từng ngày (để tính tỷ lệ nhớ). */
+  daysOk: Record<string, number>
 }
 export interface State extends Shared {
   sync: { url: string; code: string; last: number }
@@ -23,6 +30,7 @@ const KEY = 'english-app-v1'
 const DEFAULT_SYNC_URL: string = import.meta.env.VITE_SYNC_URL ?? ''
 const empty = (): State => ({
   level: null, levelU: 0, cards: {}, essays: {}, days: {}, newWords: {}, dailyNew: 10, dailyNewU: 0,
+  memo: {}, retention: 0.9, retentionU: 0, daysOk: {},
   sync: { url: DEFAULT_SYNC_URL, code: '', last: 0 },
 })
 
@@ -50,21 +58,34 @@ export const today = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 // ---------- Lặp lại ngắt quãng (FSRS) ----------
-const scheduler = fsrs({ request_retention: 0.9, enable_fuzz: true })
+const schedulers = new Map<number, ReturnType<typeof fsrs>>()
+function scheduler() {
+  const r = state.retention || 0.9
+  let f = schedulers.get(r)
+  if (!f) { f = fsrs({ request_retention: r, enable_fuzz: true }); schedulers.set(r, f) }
+  return f
+}
+/** Số lần quên (sau khi đã thuộc) để một thẻ bị coi là "từ khó". */
+export const LEECH = 5
 
-/** Chấm một thẻ và lưu lịch ôn mới. Trả về thời điểm ôn kế tiếp. */
-export function grade(id: string, g: Grade): Date {
+/** Chấm một thẻ và lưu lịch ôn mới. Trả về thời điểm ôn kế tiếp. count = false: không tính vào số lượt ôn trong ngày. */
+export function grade(id: string, g: Grade, count = true): Date {
   const now = new Date()
   const prev = state.cards[id]?.c ?? createEmptyCard(now)
-  const { card } = scheduler.next(prev, now, g)
+  const { card } = scheduler().next(prev, now, g)
   const d = today(now)
   setState({
     ...state,
     cards: { ...state.cards, [id]: { c: card, u: now.getTime() } },
-    days: { ...state.days, [d]: (state.days[d] ?? 0) + 1 },
+    days: count ? { ...state.days, [d]: (state.days[d] ?? 0) + 1 } : state.days,
+    daysOk: count && g > Rating.Again ? { ...state.daysOk, [d]: (state.daysOk[d] ?? 0) + 1 } : state.daysOk,
   })
   return new Date(card.due)
 }
+export function setMemo(id: string, text: string) {
+  setState({ ...state, memo: { ...state.memo, [id]: { text: text.trim(), u: Date.now() } } })
+}
+export function setRetention(r: number) { setState({ ...state, retention: r, retentionU: Date.now() }) }
 export const dueTime = (r: Rec) => new Date(r.c.due).getTime()
 
 export function setDailyNew(n: number) { setState({ ...state, dailyNew: n, dailyNewU: Date.now() }) }
@@ -99,7 +120,10 @@ export function saveEssay(id: string, text: string) {
 
 // ---------- Đồng bộ & sao lưu ----------
 function pickShared(s: Shared): Shared {
-  return { level: s.level, levelU: s.levelU, cards: s.cards, essays: s.essays, days: s.days, newWords: s.newWords, dailyNew: s.dailyNew, dailyNewU: s.dailyNewU }
+  return {
+    level: s.level, levelU: s.levelU, cards: s.cards, essays: s.essays, days: s.days, newWords: s.newWords, dailyNew: s.dailyNew, dailyNewU: s.dailyNewU,
+    memo: s.memo, retention: s.retention, retentionU: s.retentionU, daysOk: s.daysOk,
+  }
 }
 /** Gộp hai bản dữ liệu: mỗi mục lấy bản được sửa gần nhất. */
 export function merge(a: Shared, b: Partial<Shared>): Shared {
@@ -116,6 +140,7 @@ export function merge(a: Shared, b: Partial<Shared>): Shared {
   const days = maxOf(a.days, b.days)
   const goalNewer = (b.dailyNewU ?? 0) > a.dailyNewU
   const bNewer = (b.levelU ?? 0) > a.levelU
+  const retNewer = (b.retentionU ?? 0) > a.retentionU
   return {
     level: bNewer ? b.level ?? a.level : a.level,
     levelU: bNewer ? b.levelU! : a.levelU,
@@ -125,6 +150,10 @@ export function merge(a: Shared, b: Partial<Shared>): Shared {
     newWords: maxOf(a.newWords, b.newWords),
     dailyNew: goalNewer ? b.dailyNew ?? a.dailyNew : a.dailyNew,
     dailyNewU: goalNewer ? b.dailyNewU! : a.dailyNewU,
+    memo: newer(a.memo, b.memo),
+    retention: retNewer ? b.retention ?? a.retention : a.retention,
+    retentionU: retNewer ? b.retentionU! : a.retentionU,
+    daysOk: maxOf(a.daysOk, b.daysOk),
   }
 }
 

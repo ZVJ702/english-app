@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { GRAMMAR } from './data/grammar'
 import { EXERCISES as GRAMMAR_EXERCISES } from './data/units'
 import { Library } from './Grammar'
-import { countDue, known, Session, type Mode } from './Session'
+import { backlogLimit, countDue, known, REVIEW_CAP, Session, type Mode } from './Session'
+import { Words } from './Words'
+import { leechCount } from './vocab'
 import { Decks } from './Decks'
 import { useDecks } from './decks'
 import { Settings } from './Settings'
@@ -10,7 +12,7 @@ import { streaks, syncNow, syncReady, today, useStore } from './store'
 import { L, Ring } from './ui'
 import { Buddy } from './Buddy'
 
-type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'settings' }
+type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'words' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
@@ -43,6 +45,7 @@ export default function App() {
   if (view.name === 'session') return <Session mode={view.mode} minutes={view.minutes} onExit={home} />
   if (view.name === 'grammar') return <Library onBack={home} />
   if (view.name === 'decks') return <Decks onBack={home} />
+  if (view.name === 'words') return <Words onBack={home} />
   if (view.name === 'settings') return <Settings onBack={home} />
 
   const due = countDue()
@@ -67,6 +70,8 @@ export default function App() {
   const gDone = GRAMMAR.filter((t) => t.exercises.every((e) => s.cards[e.id])).length
   const gStarted = GRAMMAR.filter((t) => t.exercises.some((e) => s.cards[e.id])).length
   const gEx = GRAMMAR_EXERCISES.filter((e) => s.cards[e.id]).length
+  const leeches = leechCount()
+  const backlog = dueWords > backlogLimit()
   const say = notes.length === 0 ? ['Add your words!', 'Chưa có từ vựng: vào "Bộ từ" để nhập bộ thẻ Anki.']
     : due > 0 ? ["Let's review!", `${due} thẻ đang chờ bạn ôn.`]
     : doneToday ? ['Great work today!', 'Hôm nay bạn đã học rồi. Học thêm cũng được, nghỉ cũng được.']
@@ -112,11 +117,19 @@ export default function App() {
             <span>📘</span><b>Học ngữ pháp</b><small>Grammar</small>
           </button>
         </div>
-        <p className="muted small center">Mỗi phiên chỉ học một phần: từ vựng hoặc ngữ pháp, không trộn lẫn.</p>
+        {backlog ? (
+          <p className="notice">
+            🧭 Bạn có {dueWords} từ đến hạn. Mỗi phiên {minutes} phút sẽ ôn tối đa {REVIEW_CAP[minutes]} từ, thẻ quá hạn lâu nhất trước.
+            Từ mới tạm dừng cho đến khi còn dưới {backlogLimit()} từ cần ôn.
+          </p>
+        ) : (
+          <p className="muted small center">Mỗi phiên chỉ học một phần: từ vựng hoặc ngữ pháp, không trộn lẫn.</p>
+        )}
       </section>
 
       <div className="tiles">
         <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
+        <button className="tile t3" onClick={() => setView({ name: 'words' })}><span className="icon">{leeches ? '⚠️' : '🔤'}</span><b>Từ của tôi</b><small>{leeches ? `${leeches} từ khó` : `${notes.length} từ`}</small></button>
         <button className="tile t1" onClick={() => setView({ name: 'decks' })}><span className="icon">🗂️</span><b>Bộ từ</b><small>{notes.length} thẻ</small></button>
       </div>
 
