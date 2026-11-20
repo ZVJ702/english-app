@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Mapping, Model, Parsed } from './anki'
-import { deleteDeck, saveDeck, useDecks, type Note } from './decks'
+import { deleteDeck, NOTE, saveDeck, useDecks, type Note } from './decks'
 import { useStore } from './store'
 import { L, Page } from './ui'
 import { BuddySays } from './Buddy'
@@ -42,7 +42,12 @@ export function Decks({ onBack }: { onBack: () => void }) {
     if (!parsed || !map) return
     setErr('')
     try {
-      const deck = parsed.data.models[mi].id // mã cố định của bộ thẻ: giống nhau trên mọi thiết bị để đồng bộ tiến độ
+      // Mã bộ thẻ = loại thẻ + thẻ đầu tiên: cố định cho cùng một tệp trên mọi thiết bị (để giữ tiến độ),
+      // nhưng khác nhau giữa các bộ dùng chung một loại thẻ (ví dụ 6 cuốn của cùng một bộ sách).
+      const model = parsed.data.models[mi]
+      // Bộ đã nhập từ bản cũ (mã chỉ là loại thẻ) thì giữ mã cũ để không mất tiến độ hay bị nhân đôi
+      const old = model.notes.some((n) => NOTE.has(`a:${model.id}:${n.id}`))
+      const deck = old ? String(model.id) : `${model.id}-${model.notes[0]?.id ?? '0'}`
       const list = convert(parsed.data.models[mi], map, deck, parsed.lib)
       const names = list.flatMap((n) => [n.img, n.audio]).filter((x): x is string => !!x)
       setBusy(`Đang nhập ${list.length} thẻ…`)

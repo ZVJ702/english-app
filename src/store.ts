@@ -78,7 +78,8 @@ export function grade(id: string, g: Grade, count = true): Date {
     ...state,
     cards: { ...state.cards, [id]: { c: card, u: now.getTime() } },
     days: count ? { ...state.days, [d]: (state.days[d] ?? 0) + 1 } : state.days,
-    daysOk: count && g > Rating.Again ? { ...state.daysOk, [d]: (state.daysOk[d] ?? 0) + 1 } : state.daysOk,
+    // luôn ghi cả ngày có 0 câu đúng, để tỷ lệ đúng không bỏ sót những ngày làm sai hết
+    daysOk: count ? { ...state.daysOk, [d]: (state.daysOk[d] ?? 0) + (g > Rating.Again ? 1 : 0) } : state.daysOk,
   })
   return new Date(card.due)
 }

@@ -48,7 +48,9 @@ export function Gap({ ex, done, onAnswer }: Props) {
 export function Order({ ex, done, onAnswer }: Props) {
   const words = useMemo(() => {
     const list = ex.q.split(' ').map((w, i) => ({ w, i }))
-    for (let k = list.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [list[k], list[j]] = [list[j], list[k]] }
+    // xáo lại nếu vô tình ra đúng thứ tự gốc
+    for (let tries = 0; tries < 8 && list.length > 1 && list.every((x, k) => x.i === k); tries++)
+      for (let k = list.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [list[k], list[j]] = [list[j], list[k]] }
     return list
   }, [ex.q])
   const [picked, setPicked] = useState<number[]>([])

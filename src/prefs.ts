@@ -30,6 +30,8 @@ export function applyPrefs() {
   const dark = prefs.theme === 'dark' || (prefs.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1d1b2a' : '#fdf8f3')
 }
+// Ở chế độ tự động, đổi màu thanh trạng thái khi máy chuyển sáng/tối
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (prefs.theme === 'auto') applyPrefs() }) } catch { /* trình duyệt cũ */ }
 
 // Âm báo đúng/sai, tạo bằng Web Audio nên không cần tệp âm thanh.
 let ctx: AudioContext | null = null
