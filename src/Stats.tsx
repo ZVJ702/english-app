@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { GRAMMAR } from './data/grammar'
 import { useDecks } from './decks'
-import { known } from './Session'
+import { useNow } from './clock'
+import { known } from './plan'
 import { dueTime, streaks, today, useStore } from './store'
 import { wordStatus, type WordStatus } from './vocab'
 import { L, Page } from './ui'
@@ -16,7 +17,7 @@ export function Stats({ onBack }: { onBack: () => void }) {
   const { notes } = useDecks()
   const [hover, setHover] = useState<number | null>(null)
   const [cell, setCell] = useState<string | null>(null)
-  const now = new Date()
+  const now = new Date(useNow(60_000))
   const t0 = dayStart(now).getTime()
 
   // Dự báo 7 ngày: thẻ đã quá hạn được tính vào hôm nay.

@@ -1,5 +1,5 @@
 // Các dạng bài tập: trắc nghiệm, gõ điền chỗ trống, sắp xếp từ thành câu.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Exercise } from './data/grammar'
 import { sameText } from './util'
 import { L } from './ui'
@@ -46,13 +46,13 @@ export function Gap({ ex, done, onAnswer }: Props) {
 }
 
 export function Order({ ex, done, onAnswer }: Props) {
-  const words = useMemo(() => {
+  const [words] = useState(() => {
     const list = ex.q.split(' ').map((w, i) => ({ w, i }))
     // xáo lại nếu vô tình ra đúng thứ tự gốc
     for (let tries = 0; tries < 8 && list.length > 1 && list.every((x, k) => x.i === k); tries++)
       for (let k = list.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [list[k], list[j]] = [list[j], list[k]] }
     return list
-  }, [ex.q])
+  })
   const [picked, setPicked] = useState<number[]>([])
   const text = picked.map((i) => ex.q.split(' ')[i]).join(' ')
   return (

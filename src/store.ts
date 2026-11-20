@@ -21,7 +21,10 @@ export interface Shared {
   retentionU: number
   /** Số lượt trả lời đúng theo từng ngày (để tính tỷ lệ nhớ). */
   daysOk: Record<string, number>
+  /** Nhật ký trả lời sai theo mã thẻ: n = tổng số lần sai, t = lần sai gần nhất, fixed = đã luyện lại đúng. */
+  miss: Record<string, Miss>
 }
+export interface Miss { n: number; t: number; fixed: boolean; u: number }
 export interface State extends Shared {
   sync: { url: string; code: string; last: number }
 }
@@ -30,7 +33,7 @@ const KEY = 'english-app-v1'
 const DEFAULT_SYNC_URL: string = import.meta.env.VITE_SYNC_URL ?? ''
 const empty = (): State => ({
   level: null, levelU: 0, cards: {}, essays: {}, days: {}, newWords: {}, dailyNew: 10, dailyNewU: 0,
-  memo: {}, retention: 0.9, retentionU: 0, daysOk: {},
+  memo: {}, retention: 0.9, retentionU: 0, daysOk: {}, miss: {},
   sync: { url: DEFAULT_SYNC_URL, code: '', last: 0 },
 })
 
@@ -83,6 +86,14 @@ export function grade(id: string, g: Grade, count = true): Date {
   })
   return new Date(card.due)
 }
+/** Ghi lại một câu trả lời: sai thì vào nhật ký lỗi; đúng trong phiên luyện lỗi sai thì đánh dấu đã sửa. */
+export function noteAnswer(id: string, ok: boolean, practice = false) {
+  const m = state.miss[id], now = Date.now()
+  let next: Miss | null = null
+  if (!ok) next = { n: (m?.n ?? 0) + 1, t: now, fixed: false, u: now }
+  else if (practice && !m?.fixed) next = { n: m?.n ?? 0, t: m?.t ?? now, fixed: true, u: now }
+  if (next) setState({ ...state, miss: { ...state.miss, [id]: next } })
+}
 export function setMemo(id: string, text: string) {
   setState({ ...state, memo: { ...state.memo, [id]: { text: text.trim(), u: Date.now() } } })
 }
@@ -114,16 +125,12 @@ export function streaks(days: Record<string, number>): { current: number; best: 
   return { current, best }
 }
 
-export function setLevel(level: Level) { setState({ ...state, level, levelU: Date.now() }) }
-export function saveEssay(id: string, text: string) {
-  setState({ ...state, essays: { ...state.essays, [id]: { text, u: Date.now() } } })
-}
 
 // ---------- Đồng bộ & sao lưu ----------
 function pickShared(s: Shared): Shared {
   return {
     level: s.level, levelU: s.levelU, cards: s.cards, essays: s.essays, days: s.days, newWords: s.newWords, dailyNew: s.dailyNew, dailyNewU: s.dailyNewU,
-    memo: s.memo, retention: s.retention, retentionU: s.retentionU, daysOk: s.daysOk,
+    memo: s.memo, retention: s.retention, retentionU: s.retentionU, daysOk: s.daysOk, miss: s.miss,
   }
 }
 /** Gộp hai bản dữ liệu: mỗi mục lấy bản được sửa gần nhất. */
@@ -155,6 +162,7 @@ export function merge(a: Shared, b: Partial<Shared>): Shared {
     retention: retNewer ? b.retention ?? a.retention : a.retention,
     retentionU: retNewer ? b.retentionU! : a.retentionU,
     daysOk: maxOf(a.daysOk, b.daysOk),
+    miss: newer(a.miss ?? {}, b.miss),
   }
 }
 

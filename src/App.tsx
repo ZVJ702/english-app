@@ -1,31 +1,36 @@
-import { useEffect, useRef, useState } from 'react'
-import { GRAMMAR } from './data/grammar'
-import { EXERCISES as GRAMMAR_EXERCISES } from './data/units'
-import { Library } from './Grammar'
-import { backlogLimit, countDue, known, REVIEW_CAP, Session, type Mode } from './Session'
-import { Words } from './Words'
-import { Stats } from './Stats'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import type { Item, Practice } from './Session'
+import { backlogLimit, countDue, known, MISS_DAYS, recentMisses, REVIEW_CAP, useGrammar, weakTopics, type Mode } from './plan'
 import { usePrefs } from './prefs'
 import { leechCount } from './vocab'
-import { Decks } from './Decks'
 import { useDecks } from './decks'
-import { Settings } from './Settings'
+import { useNow } from './clock'
 import { streaks, syncNow, syncReady, today, useStore } from './store'
 import { L, Ring } from './ui'
 import { Buddy } from './Buddy'
 
-type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number } | { name: 'grammar' } | { name: 'decks' } | { name: 'words' } | { name: 'stats' } | { name: 'settings' }
+// Các trang khác chỉ được tải khi mở lần đầu, để trang chủ hiện ra nhanh hơn.
+const Session = lazy(() => import('./Session').then((m) => ({ default: m.Session })))
+const Library = lazy(() => import('./Grammar').then((m) => ({ default: m.Library })))
+const Words = lazy(() => import('./Words').then((m) => ({ default: m.Words })))
+const Stats = lazy(() => import('./Stats').then((m) => ({ default: m.Stats })))
+const Decks = lazy(() => import('./Decks').then((m) => ({ default: m.Decks })))
+const Settings = lazy(() => import('./Settings').then((m) => ({ default: m.Settings })))
+
+type View = { name: 'home' } | { name: 'session'; mode: Mode; minutes: number; practice?: Practice } | { name: 'grammar' } | { name: 'decks' } | { name: 'words' } | { name: 'stats' } | { name: 'settings' }
 
 export default function App() {
   const s = useStore()
   const pr = usePrefs()
+  const g = useGrammar()
+  const nowMs = useNow(60_000)
   const { notes } = useDecks()
   const [view, setView] = useState<View>({ name: 'home' })
   const [minutes, setMinutes] = useState(15)
   // Khi có bản cập nhật mới tải xong: nạp lại ngay nếu đang ở trang chính, còn đang học thì đợi quay về trang chính.
   const updateReady = useRef(false)
   const atHome = useRef(true)
-  atHome.current = view.name === 'home'
+  useEffect(() => { atHome.current = view.name === 'home' }, [view.name])
   const home = () => {
     if (updateReady.current) { location.reload(); return }
     setView({ name: 'home' })
@@ -45,17 +50,23 @@ export default function App() {
     return () => sw.removeEventListener('controllerchange', onChange)
   }, [])
 
-  if (view.name === 'session') return <Session mode={view.mode} minutes={view.minutes} onExit={home} />
-  if (view.name === 'grammar') return <Library onBack={home} />
-  if (view.name === 'decks') return <Decks onBack={home} />
-  if (view.name === 'words') return <Words onBack={home} />
-  if (view.name === 'stats') return <Stats onBack={home} />
-  if (view.name === 'settings') return <Settings onBack={home} />
+  if (view.name !== 'home') {
+    return (
+      <Suspense fallback={<main className="page"><p className="muted center">Đang mở…</p></main>}>
+        {view.name === 'session' && <Session mode={view.mode} minutes={view.minutes} practice={view.practice} onExit={home} />}
+        {view.name === 'grammar' && <Library onBack={home} />}
+        {view.name === 'decks' && <Decks onBack={home} />}
+        {view.name === 'words' && <Words onBack={home} />}
+        {view.name === 'stats' && <Stats onBack={home} />}
+        {view.name === 'settings' && <Settings onBack={home} />}
+      </Suspense>
+    )
+  }
 
   const due = countDue()
   const dueWords = countDue('vocab'), dueGrammar = countDue('grammar')
   const learned = Object.keys(s.cards).filter(known).length
-  const now = new Date()
+  const now = new Date(nowMs)
   const DAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
   const back = (n: number) => { const d = new Date(now); d.setDate(d.getDate() - n); return d }
   const week = Array.from({ length: 7 }, (_, i) => { const d = back(6 - i); return { label: DAY[d.getDay()], n: s.days[today(d)] ?? 0, isToday: i === 6 } })
@@ -75,9 +86,13 @@ export default function App() {
   const wordsToday = s.newWords[today()] ?? 0
   const hour = now.getHours()
   const hello = hour < 11 ? ['Chào buổi sáng', 'Good morning'] : hour < 18 ? ['Chào buổi chiều', 'Good afternoon'] : ['Chào buổi tối', 'Good evening']
-  const gDone = GRAMMAR.filter((t) => t.exercises.every((e) => s.cards[e.id])).length
-  const gStarted = GRAMMAR.filter((t) => t.exercises.some((e) => s.cards[e.id])).length
-  const gEx = GRAMMAR_EXERCISES.filter((e) => s.cards[e.id]).length
+  const topics = g?.topics ?? []
+  const gDone = topics.filter((t) => t.exercises.every((e) => s.cards[e.id])).length
+  const gStarted = topics.filter((t) => t.exercises.some((e) => s.cards[e.id])).length
+  const gEx = Object.keys(s.cards).filter((id) => id.startsWith('g:') && known(id)).length
+  const missed = recentMisses()
+  const weak = g ? weakTopics(g) : []
+  const practise = (title: [string, string], items: Item[]) => setView({ name: 'session', mode: 'vocab', minutes, practice: { title, items } })
   const leeches = leechCount()
   const backlog = dueWords > backlogLimit()
   const say = notes.length === 0 ? ['Add your words!', 'Chưa có từ vựng: vào "Bộ từ" để nhập bộ thẻ Anki.']
@@ -126,6 +141,11 @@ export default function App() {
             <span>📘</span><b>Học ngữ pháp</b><small>Grammar</small>
           </button>
         </div>
+        {missed.length > 0 && (
+          <button className="ghost line miss-btn" onClick={() => practise(['Ôn lỗi sai', 'Fix mistakes'], missed.slice(0, 30).map((id) => ({ id, phase: 'test' })))}>
+            🩹 <L vi={`Ôn lỗi sai (${Math.min(missed.length, 30)})`} en={`Mistakes from the last ${MISS_DAYS} days`} />
+          </button>
+        )}
         {backlog ? (
           <p className="notice">
             🧭 Bạn có {dueWords} từ đến hạn. Mỗi phiên {minutes} phút sẽ ôn tối đa {REVIEW_CAP[minutes]} từ, thẻ quá hạn lâu nhất trước.
@@ -137,7 +157,7 @@ export default function App() {
       </section>
 
       <div className="tiles grid2">
-        <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{GRAMMAR.length} chủ đề</small></button>
+        <button className="tile t2" onClick={() => setView({ name: 'grammar' })}><span className="icon">📖</span><b>Bài ngữ pháp</b><small>{g ? `${topics.length} chủ đề` : '…'}</small></button>
         <button className="tile t3" onClick={() => setView({ name: 'words' })}><span className="icon">{leeches ? '⚠️' : '🔤'}</span><b>Từ của tôi</b><small>{leeches ? `${leeches} từ khó` : `${notes.length} từ`}</small></button>
         <button className="tile t1" onClick={() => setView({ name: 'decks' })}><span className="icon">🗂️</span><b>Bộ từ</b><small>{notes.length} thẻ</small></button>
         <button className="tile t4" onClick={() => setView({ name: 'stats' })}><span className="icon">📊</span><b>Thống kê</b><small>Dự báo, lịch học</small></button>
@@ -169,16 +189,29 @@ export default function App() {
         <p className="muted small">Mục tiêu tuần: {pr.weekGoal} ngày (đổi trong Cài đặt). Chuỗi ngày: nghỉ một ngày không mất chuỗi, nghỉ hai ngày liền thì bắt đầu lại.</p>
       </section>
 
+      {weak.length > 0 && (
+        <section className="card weak">
+          <h2><L vi="Cần luyện thêm" en="Needs practice" /></h2>
+          <p className="muted small">Chủ đề ngữ pháp bạn hay làm sai nhất. Đọc lại bài rồi làm lại các câu đã sai; lịch ôn không bị thay đổi.</p>
+          {weak.map((w) => (
+            <div key={w.topic.id} className="weak-row">
+              <div><b>{w.topic.vi}</b><span className="muted small">{w.topic.level} · sai {Math.round(w.rate * 100)}% · {w.seen} bài đã làm</span></div>
+              <button onClick={() => practise([w.topic.vi, w.topic.en], [{ id: w.topic.id, phase: 'lesson' }, ...w.ids.map((id): Item => ({ id, phase: 'test' }))])}>Luyện lại</button>
+            </div>
+          ))}
+        </section>
+      )}
+
       <section className="card">
         <h2><L vi="Tiến độ ngữ pháp" en="Grammar progress" /></h2>
         <div className="lv-progress">
-          <div className="bar"><i style={{ width: `${(gEx / GRAMMAR_EXERCISES.length) * 100}%` }} /></div>
-          <span>{gEx}/{GRAMMAR_EXERCISES.length} bài tập</span>
+          <div className="bar"><i style={{ width: `${g ? (gEx / g.total) * 100 : 0}%` }} /></div>
+          <span>{gEx}/{g?.total ?? '…'} bài tập</span>
         </div>
         <div className="facts">
           <div><b>{gDone}</b><span>chủ đề đã xong</span></div>
           <div><b>{gStarted - gDone}</b><span>đang học</span></div>
-          <div><b>{GRAMMAR.length - gStarted}</b><span>chưa học</span></div>
+          <div><b>{topics.length - gStarted}</b><span>chưa học</span></div>
         </div>
         <p className="muted small">Ngữ pháp được học lần lượt từ bài đầu tiên đến bài cuối, mỗi phiên vài bài tập mới.</p>
       </section>

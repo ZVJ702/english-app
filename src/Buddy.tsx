@@ -9,7 +9,7 @@ const SPEED: Record<Mood, number> = { cheer: 2.4, wave: 1.1, happy: 1, think: 0.
 export function Buddy({ mood = 'happy', size = 96 }: { mood?: Mood; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const speed = useRef(SPEED[mood])
-  speed.current = SPEED[mood]
+  useEffect(() => { speed.current = SPEED[mood] }, [mood])
   useEffect(() => {
     const cv = ref.current
     if (!cv) return
@@ -46,12 +46,3 @@ export function BuddySays({ mood, en, vi, size = 72 }: { mood: Mood; en: string;
     </div>
   )
 }
-
-export const CHEERS: [string, string][] = [
-  ['Great job!', 'Tuyệt lắm!'], ['Nice one!', 'Hay quá!'], ['You got it!', 'Bạn làm được rồi!'],
-  ['Perfect!', 'Hoàn hảo!'], ['Keep going!', 'Tiếp tục nào!'], ['Well done!', 'Làm tốt lắm!'],
-]
-export const COMFORTS: [string, string][] = [
-  ['Almost there!', 'Gần đúng rồi!'], ["Don't worry!", 'Đừng lo nhé!'], ["You'll get it next time.", 'Lần sau sẽ nhớ thôi.'],
-  ['Mistakes help you learn.', 'Sai là để nhớ lâu hơn.'],
-]

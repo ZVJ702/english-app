@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { updateNote, useDecks, type Note } from './decks'
 import { Memo } from './Memo'
-import { say } from './Session'
+import { say } from './plan'
 import { useStore } from './store'
 import { fromNote, recId, STATUS_NAME, wordStatus, type WordStatus } from './vocab'
 import { L, Page } from './ui'

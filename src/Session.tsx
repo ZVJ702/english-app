@@ -4,32 +4,27 @@ import { GRAMMAR, type Exercise, type Kind } from './data/grammar'
 import { EXERCISES } from './data/units'
 import type { Level } from './data/vocab'
 import { allNotes, mediaUrl, NOTE } from './decks'
+import { backlogLimit, countDue, MODE_NAME, modeOf, REVIEW_CAP, say, type Mode } from './plan'
 import { Gap, Mcq, Order, type Answer } from './Exercise'
 import { Lesson } from './Grammar'
 import { Memo } from './Memo'
-import { addNewWord, dueTime, getState, grade, LEECH, newWordsLeft } from './store'
+import { addNewWord, dueTime, getState, grade, LEECH, newWordsLeft, noteAnswer } from './store'
 import { chime } from './prefs'
 import { sameText, speak, untilText } from './util'
 import { baseId, hintText, isRecId, readyToPromote, recId, vocab, type Vocab } from './vocab'
 import { Confetti, L, Page } from './ui'
-import { Buddy, BuddySays, CHEERS, COMFORTS } from './Buddy'
+import { useNow } from './clock'
+import { Buddy, BuddySays } from './Buddy'
+import { CHEERS, COMFORTS } from './cheers'
 
 const EX = new Map(EXERCISES.map((e) => [e.id, e]))
 const TOPIC = new Map(GRAMMAR.map((t) => [t.id, t]))
 /** Ngữ pháp luôn được học lần lượt từ dễ đến khó. */
 const ORDER: Level[] = ['A1', 'A2', 'B1', 'B2']
-/** Mỗi phiên chỉ học một loại nội dung: từ vựng hoặc ngữ pháp. */
-export type Mode = 'vocab' | 'grammar'
-export const MODE_NAME: Record<Mode, [string, string]> = { vocab: ['Từ vựng', 'Vocabulary'], grammar: ['Ngữ pháp', 'Grammar'] }
-const modeOf = (id: string): Mode => (id.startsWith('g:') ? 'grammar' : 'vocab')
 /** Số mục mới tối đa mỗi phiên theo thời lượng. Từ vựng còn bị giới hạn bởi số từ mới mỗi ngày người học chọn. */
 const NEW_COUNT: Record<Mode, Record<number, number>> = {
   vocab: { 5: 5, 15: 12, 30: 30 }, grammar: { 5: 4, 15: 8, 30: 16 },
 }
-/** Số thẻ đến hạn tối đa được ôn trong một phiên, để phiên không bị quá dài sau nhiều ngày nghỉ. */
-export const REVIEW_CAP: Record<number, number> = { 5: 25, 15: 70, 30: 150 }
-/** Khi số thẻ từ vựng tồn vượt mức này, tạm dừng từ mới cho đến khi ôn bớt. */
-export const backlogLimit = () => Math.max(40, getState().dailyNew * 4)
 const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ', order: 'Sắp xếp câu', pick: 'Chọn câu đúng' }
 
 /**
@@ -37,31 +32,22 @@ const KIND: Record<Kind, string> = { mcq: 'Trắc nghiệm', gap: 'Điền từ'
  * choice = hỏi đọc bài hay kiểm tra nhanh (id là mã chủ đề); verdict = kết quả kiểm tra nhanh (id là mã chủ đề).
  * probe = câu hỏi thuộc phần kiểm tra nhanh.
  */
-interface Item { id: string; phase: 'intro' | 'lesson' | 'test' | 'choice' | 'verdict'; probe?: boolean }
+export interface Item { id: string; phase: 'intro' | 'lesson' | 'test' | 'choice' | 'verdict'; probe?: boolean }
 const PROBES = 3
 
-export const known = (id: string) => EX.has(id) || NOTE.has(baseId(id))
+const known = (id: string) => EX.has(id) || NOTE.has(baseId(id))
 
 function Pic({ v }: { v: Vocab }) {
-  const [url, setUrl] = useState<string | null>(null)
+  const key = `${v.deck}/${v.img}`
+  const [got, setGot] = useState<{ key: string; url: string | null } | null>(null)
   useEffect(() => {
     let live = true
-    setUrl(null)
-    if (v.img) mediaUrl(v.deck, v.img).then((u) => { if (live) setUrl(u) })
+    if (v.img) mediaUrl(v.deck, v.img).then((url) => { if (live) setGot({ key, url }) })
     return () => { live = false }
-  }, [v.img, v.deck])
+  }, [v.img, v.deck, key])
+  const url = got?.key === key ? got.url : null
   if (v.img) return <div className="photo">{url && <img src={url} alt="" />}</div>
   return <div className="picture" aria-hidden="true">📖</div>
-}
-export async function say(v: Vocab) {
-  const url = v.audio ? await mediaUrl(v.deck, v.audio) : null
-  if (url) new Audio(url).play().catch(() => speak(v.word))
-  else speak(v.word)
-}
-
-export function countDue(mode?: Mode): number {
-  const now = Date.now()
-  return Object.entries(getState().cards).filter(([id, r]) => known(id) && (!mode || modeOf(id) === mode) && dueTime(r) <= now).length
 }
 
 function buildQueue(mode: Mode, minutes: number): Item[] {
@@ -111,7 +97,7 @@ function fill(q: string, answer: string): string {
   return q.replace(/___/g, () => parts[Math.min(i++, parts.length - 1)])
 }
 /** Câu đúng hoàn chỉnh của một bài tập, để hiện và đọc lên sau khi trả lời. */
-export function solution(ex: Exercise): string {
+function solution(ex: Exercise): string {
   if (ex.kind === 'pick') return ex.opts[ex.a]
   if (ex.kind === 'mcq') return fill(ex.q, ex.opts[ex.a])
   if (ex.kind === 'gap') return ex.q.replace(/\s*\([^)]*\)/g, '').replace(/___/, ex.answers[0])
@@ -137,8 +123,14 @@ function MissRow({ id }: { id: string }) {
   )
 }
 
-export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number; onExit: () => void }) {
-  const initial = useMemo(() => buildQueue(mode, minutes), [mode, minutes])
+/**
+ * Phiên luyện tập (practice): làm lại một danh sách cho sẵn (lỗi sai gần đây, chủ đề yếu).
+ * Không đổi lịch ôn FSRS và không giới hạn thời gian; trả lời đúng thì xóa khỏi danh sách lỗi sai, sai thì hỏi lại cuối phiên.
+ */
+export interface Practice { title: [string, string]; items: Item[] }
+
+export function Session({ mode, minutes, onExit, practice }: { mode: Mode; minutes: number; onExit: () => void; practice?: Practice }) {
+  const initial = useMemo(() => practice ? practice.items.filter((x) => x.phase !== 'test' || known(x.id)) : buildQueue(mode, minutes), [mode, minutes, practice])
   const [queue, setQueue] = useState(initial)
   const [start] = useState(() => Date.now())
   const [done, setDone] = useState(0)
@@ -155,6 +147,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const [probe, setProbe] = useState<Record<string, boolean[]>>({})
   const [peek, setPeek] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const tick = useNow(5000)
 
   const item = queue[0]
   const lesson = item?.phase === 'lesson' ? TOPIC.get(item.id) : undefined
@@ -216,7 +209,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
     const rest = queue.slice(1)
     if (requeue) rest.splice(Math.min(rest.length, 3), 0, requeue)
     setInput(''); setAnswer(null); setRevealed(false); setHints(0)
-    const timeUp = Date.now() - start > minutes * 60_000
+    const timeUp = !practice && Date.now() - start > minutes * 60_000
     // Hết giờ thì dừng, nhưng không dừng ngay sau khi vừa đọc bài hay vừa xem từ mới.
     if (rest.length === 0 || (timeUp && !requeue && item.phase === 'test')) setFinished(true)
     setQueue(rest)
@@ -252,14 +245,24 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   }
   function rate(g: Grade) {
     if (item.probe) setProbe((m) => ({ ...m, [EX.get(item.id)!.topic]: [...(m[EX.get(item.id)!.topic] ?? []), correct] }))
-    if (mode !== 'vocab' && !getState().cards[item.id]) setFresh((n) => n + 1)
     const ok = isRec ? g > Rating.Again : correct
     if (isRec) chime(ok)
-    const due = grade(item.id, g)
+    noteAnswer(item.id, ok, !!practice)
     setDone((n) => n + 1)
     setCombo((c) => (ok ? c + 1 : 0))
     if (ok) setRight((n) => n + 1)
     else setMisses((m) => (m.includes(baseId(item.id)) ? m : [...m, baseId(item.id)]))
+    if (practice) {
+      // Luyện tập không đổi lịch ôn; câu sai được hỏi lại ở cuối phiên.
+      setLast(ok ? '✓ Đã sửa xong lỗi này' : 'Câu này sẽ được hỏi lại ở cuối phiên')
+      if (!ok) { const rest = queue.slice(1); setQueue([...rest, { id: item.id, phase: 'test' }]); setInput(''); setAnswer(null); setRevealed(false); setHints(0); return }
+      advance()
+      return
+    }
+    if (mode !== 'vocab' && !getState().cards[item.id]) setFresh((n) => n + 1)
+    // Từ mới chỉ được tính khi đã trả lời lần đầu, để thoát giữa chừng không bị đếm hai lần.
+    if (isRec && !getState().cards[item.id]) addNewWord()
+    const due = grade(item.id, g)
     setLast(`Thẻ vừa rồi sẽ quay lại sau ${untilText(due)}`)
     // Thẻ đang học (hẹn lại trong vòng 10 phút) được hỏi lại ngay trong phiên.
     const soon = due.getTime() - Date.now() < 10 * 60_000
@@ -267,7 +270,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   }
 
   if (finished || !item || (!lesson && !topicCard && !word && !ex)) {
-    const left = countDue(mode)
+    const left = practice ? 0 : countDue(mode)
     return (
       <Page title={<L vi="Xong phiên học" en="Session complete" />}>
         {done > 0 && <Confetti />}
@@ -277,17 +280,18 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
           <div className="stats">
             <div className="chip c1"><b>{done}</b><L vi="lượt ôn" en="reviews" /></div>
             <div className="chip c2"><b>{done ? Math.round((right / done) * 100) : 0}%</b><L vi="chính xác" en="accuracy" /></div>
-            <div className="chip c3"><b>{fresh}</b>{mode === 'vocab' ? <L vi="từ mới" en="new words" /> : <L vi="bài mới" en="new items" />}</div>
+            {!practice && <div className="chip c3"><b>{fresh}</b>{mode === 'vocab' ? <L vi="từ mới" en="new words" /> : <L vi="bài mới" en="new items" />}</div>}
           </div>
           <p className="muted">
-            {done === 0
+            {practice ? (done > 0 ? 'Các lỗi đã luyện lại đúng sẽ không còn trong danh sách "Ôn lỗi sai". Lịch ôn tập không bị thay đổi.' : 'Không còn lỗi sai nào cần luyện.')
+              : done === 0
               ? mode === 'vocab' ? 'Không có từ nào đến hạn, và bạn đã học đủ số từ mới của hôm nay (hoặc chưa nhập bộ thẻ nào).' : 'Chưa có thẻ nào đến hạn và bạn đã học hết nội dung mới.'
               : left > 0 ? `Còn ${left} thẻ ${MODE_NAME[mode][0].toLowerCase()} đến hạn. Nghỉ cũng được — thẻ sẽ chờ bạn, không bị phạt.`
               : 'Bạn đã ôn hết các thẻ đến hạn.'}
           </p>
           <button className="primary" onClick={onExit}><L vi="Về trang chính" en="Home" /></button>
         </section>
-        {misses.length > 0 && (
+        {misses.length > 0 && !practice && (
           <section className="card">
             <h2><L vi={`Cần xem lại (${misses.length})`} en="Review these" /></h2>
             <p className="muted small">Những mục bạn trả lời sai trong phiên này. Nhìn lại một lần trước khi nghỉ giúp nhớ lâu hơn.</p>
@@ -298,7 +302,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
     )
   }
 
-  const elapsed = Math.min(1, (Date.now() - start) / (minutes * 60_000))
+  const elapsed = Math.min(1, Math.max(0, tick - start) / (minutes * 60_000))
   const key = `${item.id}-${item.phase}-${done}`
   const cheer = CHEERS[done % CHEERS.length], comfort = COMFORTS[done % COMFORTS.length]
   const unit = ex ? TOPIC.get(ex.topic)! : undefined
@@ -306,10 +310,10 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
   const leechTag = leech ? ' · ⚠️ Từ khó' : ''
 
   return (
-    <Page title={<L vi={`${MODE_NAME[mode][0]} · ${minutes} phút`} en={`${MODE_NAME[mode][1]} · ${minutes} min`} />} onBack={onExit} className="session"
+    <Page title={practice ? <L vi={practice.title[0]} en={practice.title[1]} /> : <L vi={`${MODE_NAME[mode][0]} · ${minutes} phút`} en={`${MODE_NAME[mode][1]} · ${minutes} min`} />} onBack={onExit} className="session"
       action={document.fullscreenEnabled && <button className="ghost full-btn" onClick={toggleFull} aria-label={full ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>{full ? '🗗' : '⛶'}</button>}>
       <div className="swipe-zone" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="bar"><i style={{ width: `${elapsed * 100}%` }} /></div>
+      <div className="bar"><i style={{ width: `${(practice ? done / (done + queue.length) : elapsed) * 100}%` }} /></div>
       <p className="muted small status">
         <span>{last || `Còn ${queue.length} mục trong hàng đợi · ${queue.length} queued`}</span>
         {combo >= 2 && <span className="combo" key={combo}>🔥 {combo} đúng liên tiếp</span>}
@@ -350,7 +354,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
 
       {lesson && (
         <section className="card slide lesson" key={key}>
-          <span className="tag write">📘 Ngữ pháp mới · New grammar</span>
+          <span className="tag write">{practice ? '📘 Đọc lại bài · Review the lesson' : '📘 Ngữ pháp mới · New grammar'}</span>
           <Lesson t={lesson} />
           <button className="primary" data-key="go" onClick={() => advance()}><L vi="Đã hiểu, làm bài tập" en="Got it, let me practise" /></button>
         </section>
@@ -366,7 +370,7 @@ export function Session({ mode, minutes, onExit }: { mode: Mode; minutes: number
             <p key={i} className="example">{t} <button className="ghost" onClick={() => speak(t)} aria-label="Nghe câu · Listen">🔊</button></p>
           ))}
           <Memo id={word.id} />
-          <button className="primary" data-key="go" onClick={() => { setFresh((n) => n + 1); addNewWord(); advance({ id: recId(item.id), phase: 'test' }) }}>
+          <button className="primary" data-key="go" onClick={() => { setFresh((n) => n + 1); advance({ id: recId(item.id), phase: 'test' }) }}>
             <L vi="Đã hiểu, lát nữa hỏi lại" en="Got it, test me soon" />
           </button>
         </section>

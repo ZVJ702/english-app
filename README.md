@@ -8,6 +8,7 @@ Web app cài được (PWA) để học từ vựng và ngữ pháp tiếng Anh 
 - **Ngữ pháp**: 75 chủ đề (A1–B2) có bài đọc chi tiết (so sánh với tiếng Việt, lỗi hay gặp, ghi chú phát âm), kiểm tra nhanh đầu chủ đề, và 4 dạng bài: trắc nghiệm, điền từ, sắp xếp câu, chọn câu đúng. Sửa hoặc thêm trong `src/data/grammar.ts`.
 - **Phiên học 5, 15 hoặc 30 phút**, tách riêng: phiên Từ vựng và phiên Ngữ pháp không trộn lẫn. Lịch ôn do thuật toán FSRS tính.
 - **Từ vựng hai bước**: nhớ nghĩa (tự chấm) rồi mới tự viết từ, có gợi ý từng bước; từ hay quên được đánh dấu "từ khó", có ô mẹo nhớ và trang **Từ của tôi** để lọc, tìm, sửa.
+- **Ôn lỗi sai**: luyện lại các thẻ trả lời sai trong 7 ngày qua; **Cần luyện thêm** gợi ý chủ đề ngữ pháp hay sai nhất. Luyện tập không làm đổi lịch ôn.
 - **Thống kê**: dự báo số thẻ cần ôn 7 ngày tới, mức độ thuộc từ, tỷ lệ trả lời đúng, lịch học 26 tuần.
 - **Tùy chỉnh**: giao diện sáng/tối, cỡ chữ, âm báo, mục tiêu số ngày học mỗi tuần, mức ghi nhớ mục tiêu (85–95%).
 - **Học nhanh**: phím tắt trên máy tính (Enter/Space, 1–4, H), vuốt trên điện thoại, chế độ toàn màn hình.
