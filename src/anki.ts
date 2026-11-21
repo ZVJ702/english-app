@@ -40,7 +40,14 @@ function mediaNamesFromProto(buf: Uint8Array): string[] {
 
 export async function parseApkg(file: Blob): Promise<Parsed> {
   const zip = new ZipReader(new BlobReader(file))
-  const entries = new Map<string, Entry>((await zip.getEntries()).map((e) => [e.filename, e]))
+  let list: Entry[]
+  try { list = await zip.getEntries() } catch { throw new Error('Tệp này không phải bộ thẻ Anki (.apkg). Hãy chọn đúng tệp .apkg đã tải từ AnkiWeb.') }
+  // Tệp .zip chứa bên trong một tệp .apkg (một số trình duyệt điện thoại nén lại khi tải): mở tệp bên trong.
+  const inner = list.find((e) => /\.(apkg|colpkg)$/i.test(e.filename) && !e.directory)
+  if (inner && !list.some((e) => e.filename.startsWith('collection.anki'))) {
+    return parseApkg(await (inner as FileEntry).getData(new BlobWriter()))
+  }
+  const entries = new Map<string, Entry>(list.map((e) => [e.filename, e]))
   const bytes = (name: string) => (entries.get(name) as FileEntry).getData(new Uint8ArrayWriter())
 
   const colName = ['collection.anki21b', 'collection.anki21', 'collection.anki2'].find((n) => entries.has(n))

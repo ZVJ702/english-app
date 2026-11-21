@@ -119,12 +119,12 @@ export function Decks({ onBack }: { onBack: () => void }) {
       })}
       <section className="card">
         <h2><L vi="Nhập bộ thẻ Anki" en="Import an Anki deck" /></h2>
-        <p className="muted small">Tải tệp .apkg từ ankiweb.net/shared/decks rồi chọn tệp ở đây. Tệp được đọc ngay trên thiết bị, không gửi đi đâu. Bộ thẻ lớn có thể mất vài phút.</p>
+        <p className="muted small">Tải tệp .apkg từ ankiweb.net/shared/decks rồi chọn tệp ở đây (trên điện thoại thường nằm trong thư mục Tải xuống / Download). Tệp được đọc ngay trên thiết bị, không gửi đi đâu. Bộ thẻ lớn có thể mất vài phút.</p>
         {err && <p className="error">{err}</p>}
         <button className="primary" disabled={!!busy} onClick={() => file.current?.click()}>
           {busy || <L vi="Chọn tệp .apkg" en="Choose .apkg file" />}
         </button>
-        <input ref={file} type="file" accept=".apkg,.colpkg,application/zip,application/octet-stream" hidden
+        <input ref={file} type="file" hidden
           onChange={(e) => { const f = e.target.files?.[0]; if (f) pick(f); e.target.value = '' }} />
         <p className="muted small">Hình và âm thanh của bộ thẻ chỉ nằm trên thiết bị này. Tiến độ học thì đồng bộ được; muốn học bộ này trên máy khác, hãy nhập cùng tệp đó ở máy kia.</p>
       </section>
